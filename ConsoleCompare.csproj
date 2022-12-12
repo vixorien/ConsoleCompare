@@ -61,6 +61,7 @@
     <Compile Include="ResultsWindowControl.xaml.cs">
       <DependentUpon>ResultsWindowControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="SimileParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
@@ -84,6 +85,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="OutputExample.txt" />
     <Content Include="Resources\Command.png" />
     <Content Include="Resources\CommandPackage.ico" />
     <Content Include="Resources\ResultsWindowCommand.png" />

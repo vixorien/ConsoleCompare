@@ -106,9 +106,19 @@ namespace ConsoleCompare
 		/// <returns>A new simile loaded from the file</returns>
 		public static ConsoleSimile LoadFromFile(string filePath)
 		{
+			// Read the lines from the file
+			string[] lines = null;
+			try
+			{
+				lines = File.ReadAllLines(filePath);
+			}
+			catch (Exception e)
+			{
+				throw new InvalidOperationException("Unable to load simile from file", e);
+			}
 
-			throw new NotImplementedException();
-
+			// Parse whatever we read
+			return SimileParser.Parse(lines);
 		}
 
 	}
