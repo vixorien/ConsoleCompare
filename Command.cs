@@ -101,6 +101,10 @@ namespace ConsoleCompare
 			OpenWindow();
 		}
 
+		/// <summary>
+		/// Custom get property for grabbing the service provider package
+		/// </summary>
+		public Microsoft.VisualStudio.Shell.IAsyncServiceProvider ServiceProviderPackage { get => package; }
 
 		// Opening the window programmatically
 		// From: https://stackoverflow.com/a/31120230
@@ -110,7 +114,7 @@ namespace ConsoleCompare
 
 			ResultsWindow window = (ResultsWindow)this.package.FindToolWindow(typeof(ResultsWindow), 0, true); // True means: create if not found. 0 means there is only 1 instance of this tool window
 			if (window == null || window.Frame == null)
-				throw new NotSupportedException("MyToolWindow not found");
+				throw new NotSupportedException("ResultsWindow not found");
 
 			IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
 			ErrorHandler.ThrowOnFailure(windowFrame.Show());

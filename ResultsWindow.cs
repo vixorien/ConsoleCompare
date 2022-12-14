@@ -46,7 +46,7 @@ namespace ConsoleCompare
 			this.Content = windowControl; // Casts to object
 
 			// Create the capture manager with a reference to this window
-			capture = new CaptureManager(this.Package as AsyncPackage, this);
+			capture = new CaptureManager(this);
 		}
 
 		/// <summary>
