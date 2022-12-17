@@ -10,17 +10,21 @@ namespace ConsoleCompare
 	/// An example simile file might look like this:
 	/// 
 	/// # Comment
-	/// # Below . means output and > means input
 	/// 
 	/// # Blank lines are ignored, but lines with just '.' mean
 	/// # to expect a blank in the output
 	/// 
+	/// # Line notation:
+	/// # . means a standard line that ends with a newline
+	/// # ; means a line without a newline, generally right before user input 
+	/// # > means input from the user
+	/// 
 	/// .Hello, World!
-	/// .What is your name?
+	/// ;What is your name?
 	/// >Chris
 	/// .Hello, Chris!
 	/// .
-	/// .What is your age?
+	/// ;What is your age?
 	/// >7
 	/// .You are 7 years old?  That's over 2555 days!
 	///
@@ -64,7 +68,8 @@ namespace ConsoleCompare
 			switch (line[0])
 			{
 				// Simple parsing for now
-				case '.': simile.AddOutput(line.Substring(1)); break;
+				case '.': simile.AddOutput(line.Substring(1), true); break;
+				case ';': simile.AddOutput(line.Substring(1), false); break;
 				case '>': simile.AddInput(line.Substring(1)); break;
 
 				// Comments: Simply ignore, but here if we want to do something

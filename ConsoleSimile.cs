@@ -2,13 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Navigation;
 
 namespace ConsoleCompare
 {
 	/// <summary>
 	/// Represents a set of console IO for comparison
 	/// </summary>
-	internal class ConsoleSimile
+	internal class ConsoleSimile : IEnumerable
 	{
 		// Overall requirements:
 		// - Multiples lines (probably just a List of them in order)
@@ -34,6 +35,18 @@ namespace ConsoleCompare
 		private int currentOutputIndex = 0;
 
 		/// <summary>
+		/// Gets the count of all lines (input and output) in the simile
+		/// </summary>
+		public int Count => allLines.Count;
+
+		/// <summary>
+		/// Gets a line, either input or output, from the simile
+		/// </summary>
+		/// <param name="index">Index of the line to retrieve</param>
+		/// <returns>A simile line, either input or output</returns>
+		public SimileLine this[int index] => allLines[index];
+
+		/// <summary>
 		/// Creates a new, empty console simile
 		/// </summary>
 		public ConsoleSimile()
@@ -47,9 +60,10 @@ namespace ConsoleCompare
 		/// Adds a simple text line to the list of output
 		/// </summary>
 		/// <param name="text">Output text</param>
-		public void AddOutput(string text)
+		/// <param name="hasNewline">Does this output have a newline?</param>
+		public void AddOutput(string text, bool hasNewline)
 		{
-			SimileLineOutput output = new SimileLineOutput(text);
+			SimileLineOutput output = new SimileLineOutput(text, hasNewline);
 
 			// Add to the overall lines and the output list
 			allLines.Add(output);
@@ -121,9 +135,93 @@ namespace ConsoleCompare
 			return SimileParser.Parse(lines);
 		}
 
+		/// <summary>
+		/// Creates a new enumerator for this simile
+		/// </summary>
+		/// <returns>A new simile enumerator</returns>
+		public SimileEnumerator GetEnumerator()
+		{
+			return new SimileEnumerator(this);
+		}
+
+		/// <summary>
+		/// Creates a new enumerator for this simile
+		/// </summary>
+		/// <returns>A new simile enumerator</returns>
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return GetEnumerator();
+		}
 	}
 
-	
+	internal class SimileEnumerator : IEnumerator
+	{
+		// Fields
+		private int currentIndex;
+		private SimileLine currentLine;
+
+		/// <summary>
+		/// Gets the current simile line
+		/// </summary>
+		public SimileLine Current => currentLine;
+
+		/// <summary>
+		/// Gets the current simile line as a basic object
+		/// </summary>
+		object IEnumerator.Current => Current;
+
+		/// <summary>
+		/// Gets the simile for this enumerator
+		/// </summary>
+		public ConsoleSimile Simile { get; private set; }
+
+		/// <summary>
+		/// Creates an enumerator for a simile
+		/// </summary>
+		/// <param name="simile">The simile to enumerate</param>
+		public SimileEnumerator(ConsoleSimile simile)
+		{
+			Simile = simile;
+			Reset();
+		}
+
+		/// <summary>
+		/// Nothing to dispose, but required none-the-less
+		/// </summary>
+		public void Dispose() { }
+
+		/// <summary>
+		/// Moves the enumerator to the next line of the simile
+		/// </summary>
+		/// <returns>True if the enumerator still has data, false otherwise</returns>
+		public bool MoveNext()
+		{
+			// Increment forward and check validity
+			currentIndex++;
+
+			if (currentIndex < Simile.Count)
+			{
+				currentLine = Simile[currentIndex];
+				return true;
+			}
+			else
+			{
+				currentLine = null;
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Resets the enumerator back to the beginning of the simile
+		/// </summary>
+		public void Reset()
+		{
+			currentIndex = -1;
+			currentLine = null;
+		}
+	}
+
+
 
 	/// <summary>
 	/// Base class for lines of IO
@@ -156,9 +254,12 @@ namespace ConsoleCompare
 
 		public string Text { get; private set; }
 
-		public SimileLineOutput(string text)
+		public bool HasNewline { get; private set; } // TODO: Rename this
+
+		public SimileLineOutput(string text, bool hasNewline)
 		{
 			Text = text;
+			HasNewline = hasNewline;
 		}
 
 	}

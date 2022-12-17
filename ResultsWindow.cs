@@ -56,12 +56,12 @@ namespace ConsoleCompare
 		{
 			// Just testing...
 			ConsoleSimile check = new ConsoleSimile();
-			check.AddOutput("Hello, World!");
+			check.AddOutput("Hello, World!", true);
 			for (int i = 0; i < 10; i++)
-				check.AddOutput(i.ToString());
-			check.AddOutput("Enter your name: ");
+				check.AddOutput(i.ToString(), true);
+			check.AddOutput("Enter your name: ", false);
 			check.AddInput("Chris");
-			check.AddOutput("Your name is Chris");
+			check.AddOutput("Your name is Chris", true);
 
 			capture.BeginCapture(check);
 		}
@@ -84,24 +84,23 @@ namespace ConsoleCompare
 			windowControl.ExpectedOutput.Document.Blocks.Clear();
 		}
 
-		public void AddTextOutput(string text) => AddText(text, Brushes.White, windowControl.ProgramOutput);
+		public void AddTextOutput(string text) => AddText(text, Brushes.White, FontStyles.Normal, windowControl.ProgramOutput);
+		public void AddTextOutput(string text, FontStyle style) => AddText(text, Brushes.White, style, windowControl.ProgramOutput);
+		public void AddTextOutput(string text, SolidColorBrush color) => AddText(text, color, FontStyles.Normal, windowControl.ProgramOutput);
+		public void AddTextOutput(string text, FontStyle style, SolidColorBrush color) => AddText(text, color, style, windowControl.ProgramOutput);
 
-		public void AddTextOutput(string text, SolidColorBrush color) => AddText(text, color, windowControl.ProgramOutput);
-
-		public void AddTextExpected(string text) => AddText(text, Brushes.White, windowControl.ExpectedOutput);
-
-		public void AddTextExpected(string text, SolidColorBrush color) => AddText(text, color, windowControl.ExpectedOutput);
+		public void AddTextExpected(string text) => AddText(text, Brushes.White, FontStyles.Normal, windowControl.ExpectedOutput);
+		public void AddTextExpected(string text, FontStyle style) => AddText(text, Brushes.White, style, windowControl.ExpectedOutput);
+		public void AddTextExpected(string text, SolidColorBrush color) => AddText(text, color, FontStyles.Normal, windowControl.ExpectedOutput);
+		public void AddTextExpected(string text, FontStyle style, SolidColorBrush color) => AddText(text, color, style, windowControl.ExpectedOutput);
 
 		/// <summary>
 		/// Private helper for adding colored text to a particular text box
 		/// </summary>
-		/// <param name="text"></param>
-		/// <param name="color"></param>
-		/// <param name="textBox"></param>
-		private void AddText(string text, SolidColorBrush color, RichTextBox textBox)
+		private void AddText(string text, SolidColorBrush color, FontStyle style, RichTextBox textBox)
 		{
 			// Set up a text run with proper color
-			Run run = new Run(text) { Foreground = color };
+			Run run = new Run(text) { Foreground = color, FontStyle = style };
 
 			// Create a paragraph for the run with no margin
 			Paragraph p = new Paragraph() { Margin = new Thickness(0) };

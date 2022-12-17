@@ -7,6 +7,10 @@ using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE80;
 using System.Windows.Media;
 using Microsoft.VisualStudio.PlatformUI;
+using System.Threading.Tasks;
+using System.Threading;
+using Microsoft.VisualStudio.VCProjectEngine;
+using System.Windows;
 
 namespace ConsoleCompare
 {
@@ -15,7 +19,6 @@ namespace ConsoleCompare
 
 		private DTE dte;
 		private ResultsWindow window;
-		private StreamWriter procInputWriter;
 		private System.Diagnostics.Process proc;
 
 		private ConsoleSimile simile;
@@ -39,7 +42,7 @@ namespace ConsoleCompare
 
 			// Overwrite the current simile for comparison
 			this.simile = simile;
-			if (this.simile == null) 
+			if (this.simile == null)
 				throw new ArgumentNullException("Simile cannot be null for a capture");
 
 			// Is the process alive and in progress?
@@ -68,6 +71,8 @@ namespace ConsoleCompare
 			simile.ResetOutputIteration();
 			window.ClearAllText();
 
+			bool asyncIO = false;
+
 			// Create the process
 			proc = new System.Diagnostics.Process();
 
@@ -88,9 +93,11 @@ namespace ConsoleCompare
 
 			// Get rolling
 			proc.Start();
-			proc.BeginErrorReadLine();
-			proc.BeginOutputReadLine();
-			procInputWriter = proc.StandardInput;
+			if (asyncIO)
+			{
+				proc.BeginErrorReadLine();
+				proc.BeginOutputReadLine();
+			}
 
 			window.SetStatus("Application started");
 
@@ -102,10 +109,73 @@ namespace ConsoleCompare
 
 			// Loop and send all input to the writer immediately so
 			// that the process can read it as necessary
-			simile.SendAllInput(procInputWriter);
+			simile.SendAllInput(proc.StandardInput);
 
+			// Testing
 			MessageBox(CheckCodeForComments(), "Elements");
+
+			// If we're manually handling IO, 
+			if (!asyncIO)
+			{
+				System.Threading.Thread t = new System.Threading.Thread(
+					() => ManualIO()
+				);
+				t.Start();
+			}
 		}
+
+
+		private void ManualIO()
+		{
+		
+			// Loop thorugh all simile lines and check against the process's output
+			for (int i = 0; i < simile.Count; i++)
+			{
+				// Grab the current line and check the type
+				SimileLine line = simile[i];
+
+				switch (line)
+				{
+					case SimileLineOutput output:
+
+						// Grab the process's output and compare
+						string expected = output.Text;
+						string actual = proc.StandardOutput.ReadLine();
+
+						// Do they match?
+						SolidColorBrush color = (actual == expected) ? Brushes.Green : Brushes.OrangeRed;
+
+						ThreadHelper.JoinableTaskFactory.Run(async delegate
+						{
+							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+							// Add the text to both boxes
+							window.AddTextOutput(actual, color);
+							window.AddTextExpected(expected);
+						});
+
+						break;
+
+					case SimileLineInput input:
+
+						// Grab the data to send to the process, do so and put in both boxes
+						proc.StandardInput.WriteLine(input.Text);
+
+						ThreadHelper.JoinableTaskFactory.Run(async delegate
+						{
+							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+							// Add the text to both boxes
+							window.AddTextOutput(input.Text, FontStyles.Italic, Brushes.Green);
+							window.AddTextExpected(input.Text, FontStyles.Italic);
+						});
+
+						break;
+				}
+
+			}
+		}
+
 
 
 		private void Capture_DataReceived(object sender, DataReceivedEventArgs e)
@@ -122,7 +192,7 @@ namespace ConsoleCompare
 
 				// Do they match?
 				SolidColorBrush color = (output == expected) ? Brushes.Green : Brushes.OrangeRed;
-				
+
 				// Add the text to both boxes
 				window.AddTextOutput(output, color);
 				window.AddTextExpected(expected);
@@ -145,7 +215,7 @@ namespace ConsoleCompare
 			});
 		}
 
-		
+
 
 		private void Capture_ProcessExit(object sender, EventArgs e)
 		{
@@ -266,7 +336,7 @@ namespace ConsoleCompare
 			// Loop through each element recursively and add info about the element
 			string elementDetail = "Element: " + element.Kind + "\n";
 			results += elementDetail.PadLeft(elementDetail.Length + depth, '-');
-			
+
 
 			// Check for function
 			if (element.Kind == vsCMElement.vsCMElementFunction)
