@@ -20,11 +20,11 @@
 		</Grid.ColumnDefinitions>
 
 		<Label Content="Program Output:" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left" Width="105" Foreground="White" Margin="10,70,0,0"/>
-		<RichTextBox Name="ProgramOutput" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Consolas" Foreground="White" Background="Black" IsReadOnly="True">
+		<RichTextBox Name="ProgramOutput" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Consolas" Foreground="White" Background="Black" IsReadOnly="True" ScrollViewer.ScrollChanged="SyncScrollChanged">
 		</RichTextBox>
 
 		<Label Content="Expected Output:" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left" Width="105" Foreground="White" Margin="10,70,0,0"/>
-		<RichTextBox Name="ExpectedOutput" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" Background="Black" Foreground="White" IsReadOnly="True">
+		<RichTextBox Name="ExpectedOutput" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" Background="Black" Foreground="White" IsReadOnly="True" ScrollViewer.ScrollChanged="SyncScrollChanged">
 		</RichTextBox>
 		<Button x:Name="ButtonCapture" Content="Run Project" HorizontalAlignment="Left" Height="31" Margin="10,10,0,0" VerticalAlignment="Top" Width="105" Click="ButtonCapture_Click"/>
 		<TextBox x:Name="TextStatus" Grid.Column="1" Margin="10,10,10,50" TextWrapping="Wrap" Text="Status:" IsReadOnly="True"/>

@@ -76,11 +76,14 @@ namespace ConsoleCompare
 			// Create the process
 			proc = new System.Diagnostics.Process();
 
-			// Set up events
-			proc.EnableRaisingEvents = true;
-			proc.OutputDataReceived += Capture_DataReceived;
-			proc.ErrorDataReceived += Capture_ErrorReceived;
-			proc.Exited += Capture_ProcessExit;
+			// Set up events if async
+			if (asyncIO)
+			{
+				proc.EnableRaisingEvents = true;
+				proc.Exited += Capture_ProcessExit;
+				proc.OutputDataReceived += Capture_DataReceived;
+				proc.ErrorDataReceived += Capture_ErrorReceived;
+			}
 
 			// Set up start info and redirects
 			proc.StartInfo.FileName = exePath;
@@ -92,6 +95,8 @@ namespace ConsoleCompare
 			proc.StartInfo.RedirectStandardInput = true;
 
 			// Get rolling
+			// Note: Do NOT block the process here using WaitForExit(), as that
+			// will cause problems with the threaded nature of the UI system
 			proc.Start();
 			if (asyncIO)
 			{
@@ -101,18 +106,8 @@ namespace ConsoleCompare
 
 			window.SetStatus("Application started");
 
-			// Note: Do NOT block the process here using WaitForExit(), as that
-			// will cause problems with the threaded nature of the UI system
-
-			// Potential new tactic for handling input/output hangs with
-			// write() and ReadLine() combos: https://stackoverflow.com/a/29118547
-
-			// Loop and send all input to the writer immediately so
-			// that the process can read it as necessary
-			simile.SendAllInput(proc.StandardInput);
-
 			// Testing
-			MessageBox(CheckCodeForComments(), "Elements");
+			//MessageBox(CheckCodeForComments(), "Elements");
 
 			// If we're manually handling IO, 
 			if (!asyncIO)
@@ -122,57 +117,102 @@ namespace ConsoleCompare
 				);
 				t.Start();
 			}
+			else
+			{
+				// Loop and send all input to the writer immediately so
+				// that the process can read it as necessary
+				simile.SendAllInput(proc.StandardInput);
+			}
 		}
 
 
 		private void ManualIO()
 		{
-		
+			// Track the previous line's ending to know if the next has to append
+			LineEndingType previousLineEnding = LineEndingType.NewLine;
+
 			// Loop thorugh all simile lines and check against the process's output
 			for (int i = 0; i < simile.Count; i++)
 			{
+				// Will we be appending this line?
+				bool append = previousLineEnding == LineEndingType.SameLine;
+
 				// Grab the current line and check the type
 				SimileLine line = simile[i];
-
 				switch (line)
 				{
+					// Line is output from the console process
 					case SimileLineOutput output:
 
-						// Grab the process's output and compare
+						// Grab the expected output and check the line ending type
 						string expected = output.Text;
-						string actual = proc.StandardOutput.ReadLine();
+						string actual = null;
+						//actual = proc.StandardOutput.ReadLine();
+						switch (output.LineEnding)
+						{
+							// New line, so just perform a standard ReadLine()
+							case LineEndingType.NewLine: actual = proc.StandardOutput.ReadLine(); break;
+
+							// Output expects the next line (probably input) to be on the same line,
+							// so we can't rely on ReadLine() for this.  Need to manually grab characters.
+							case LineEndingType.SameLine:
+
+								actual = "";
+								int charCount = 0;
+								while(
+									charCount < expected.Length && 
+									!proc.StandardOutput.EndOfStream && 
+									proc.StandardOutput.Peek() != -1
+								)
+								{
+									actual += (char)proc.StandardOutput.Read();
+									charCount++;
+								}
+
+								// TODO: Handle the case when we run out of characters before the end!
+
+								break;
+						}
 
 						// Do they match?
 						SolidColorBrush color = (actual == expected) ? Brushes.Green : Brushes.OrangeRed;
 
+						// Swap to the UI thread to update
 						ThreadHelper.JoinableTaskFactory.Run(async delegate
 						{
 							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 							// Add the text to both boxes
-							window.AddTextOutput(actual, color);
-							window.AddTextExpected(expected);
+							window.AddTextOutput(actual, color, FontStyles.Normal, FontWeights.Normal, append);
+							window.AddTextExpected(expected, Brushes.White, FontStyles.Normal, FontWeights.Normal, append);
 						});
+
+						// Save the previous ending
+						previousLineEnding = output.LineEnding;
 
 						break;
 
+					// Line is input from the user
 					case SimileLineInput input:
 
 						// Grab the data to send to the process, do so and put in both boxes
 						proc.StandardInput.WriteLine(input.Text);
 
+						// Swap to the UI thread to update
 						ThreadHelper.JoinableTaskFactory.Run(async delegate
 						{
 							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 							// Add the text to both boxes
-							window.AddTextOutput(input.Text, FontStyles.Italic, Brushes.Green);
-							window.AddTextExpected(input.Text, FontStyles.Italic);
+							window.AddTextOutput(input.Text, Brushes.Green, FontStyles.Italic, FontWeights.UltraBold, append);
+							window.AddTextExpected(input.Text, Brushes.White, FontStyles.Italic, FontWeights.UltraBold, append);
 						});
+
+						// Previous line ending is now a new line since we're simulating the user pressing enter
+						previousLineEnding = LineEndingType.NewLine;
 
 						break;
 				}
-
 			}
 		}
 
@@ -194,8 +234,8 @@ namespace ConsoleCompare
 				SolidColorBrush color = (output == expected) ? Brushes.Green : Brushes.OrangeRed;
 
 				// Add the text to both boxes
-				window.AddTextOutput(output, color);
-				window.AddTextExpected(expected);
+				//window.AddTextOutput(output, color);
+				//window.AddTextExpected(expected);
 			});
 		}
 
@@ -211,7 +251,7 @@ namespace ConsoleCompare
 			ThreadHelper.JoinableTaskFactory.Run(async delegate
 			{
 				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-				window.AddTextOutput(e.Data, Brushes.Red);
+				//window.AddTextOutput(e.Data, Brushes.Red);
 			});
 		}
 

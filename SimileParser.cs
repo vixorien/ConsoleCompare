@@ -68,8 +68,8 @@ namespace ConsoleCompare
 			switch (line[0])
 			{
 				// Simple parsing for now
-				case '.': simile.AddOutput(line.Substring(1), true); break;
-				case ';': simile.AddOutput(line.Substring(1), false); break;
+				case '.': simile.AddOutput(line.Substring(1), LineEndingType.NewLine); break;
+				case ';': simile.AddOutput(line.Substring(1), LineEndingType.SameLine); break;
 				case '>': simile.AddInput(line.Substring(1)); break;
 
 				// Comments: Simply ignore, but here if we want to do something

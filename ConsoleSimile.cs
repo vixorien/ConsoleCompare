@@ -60,10 +60,10 @@ namespace ConsoleCompare
 		/// Adds a simple text line to the list of output
 		/// </summary>
 		/// <param name="text">Output text</param>
-		/// <param name="hasNewline">Does this output have a newline?</param>
-		public void AddOutput(string text, bool hasNewline)
+		/// <param name="lineEnding">Type of line ending for this output</param>
+		public void AddOutput(string text, LineEndingType lineEnding = LineEndingType.NewLine)
 		{
-			SimileLineOutput output = new SimileLineOutput(text, hasNewline);
+			SimileLineOutput output = new SimileLineOutput(text, lineEnding);
 
 			// Add to the overall lines and the output list
 			allLines.Add(output);
@@ -221,7 +221,14 @@ namespace ConsoleCompare
 		}
 	}
 
-
+	/// <summary>
+	/// Possible line endings for simile output
+	/// </summary>
+	public enum LineEndingType
+	{
+		NewLine,
+		SameLine
+	}
 
 	/// <summary>
 	/// Base class for lines of IO
@@ -248,18 +255,19 @@ namespace ConsoleCompare
 	/// </summary>
 	internal class SimileLineOutput : SimileLine
 	{
+
 		// TODO: Output should be made up of one or more output elements
 		// - Each element is one of "text", "text from a set", "number", etc.
 		// - Final text of the line is a concatenation of all elements in order
 
 		public string Text { get; private set; }
 
-		public bool HasNewline { get; private set; } // TODO: Rename this
+		public LineEndingType LineEnding { get; private set; } // TODO: Rename this
 
-		public SimileLineOutput(string text, bool hasNewline)
+		public SimileLineOutput(string text, LineEndingType lineEnding)
 		{
 			Text = text;
-			HasNewline = hasNewline;
+			LineEnding = lineEnding;
 		}
 
 	}

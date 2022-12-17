@@ -28,5 +28,14 @@ namespace ConsoleCompare
 
 			window.BeginCapture();
 		}
+
+
+		private void SyncScrollChanged(object sender, ScrollChangedEventArgs e)
+		{
+			RichTextBox toSync = (sender == this.ExpectedOutput) ? this.ProgramOutput : this.ExpectedOutput;
+
+			toSync.ScrollToVerticalOffset(e.VerticalOffset);
+			toSync.ScrollToHorizontalOffset(e.HorizontalOffset);
+		}
 	}
 }

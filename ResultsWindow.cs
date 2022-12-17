@@ -56,12 +56,12 @@ namespace ConsoleCompare
 		{
 			// Just testing...
 			ConsoleSimile check = new ConsoleSimile();
-			check.AddOutput("Hello, World!", true);
+			check.AddOutput("Hello, World!");
 			for (int i = 0; i < 10; i++)
-				check.AddOutput(i.ToString(), true);
-			check.AddOutput("Enter your name: ", false);
+				check.AddOutput(i.ToString());
+			check.AddOutput("Enter your name: ", LineEndingType.SameLine);
 			check.AddInput("Chris");
-			check.AddOutput("Your name is Chris", true);
+			check.AddOutput("Your name is Chris");
 
 			capture.BeginCapture(check);
 		}
@@ -84,30 +84,46 @@ namespace ConsoleCompare
 			windowControl.ExpectedOutput.Document.Blocks.Clear();
 		}
 
-		public void AddTextOutput(string text) => AddText(text, Brushes.White, FontStyles.Normal, windowControl.ProgramOutput);
-		public void AddTextOutput(string text, FontStyle style) => AddText(text, Brushes.White, style, windowControl.ProgramOutput);
-		public void AddTextOutput(string text, SolidColorBrush color) => AddText(text, color, FontStyles.Normal, windowControl.ProgramOutput);
-		public void AddTextOutput(string text, FontStyle style, SolidColorBrush color) => AddText(text, color, style, windowControl.ProgramOutput);
+		//public void AddTextOutput(string text) => AddText(text, Brushes.White, FontStyles.Normal, windowControl.ProgramOutput);
+		//public void AddTextOutput(string text, FontStyle style) => AddText(text, Brushes.White, style, windowControl.ProgramOutput);
+		//public void AddTextOutput(string text, SolidColorBrush color) => AddText(text, color, FontStyles.Normal, windowControl.ProgramOutput);
+		//public void AddTextOutput(string text, FontStyle style, SolidColorBrush color) => AddText(text, color, style, windowControl.ProgramOutput);
 
-		public void AddTextExpected(string text) => AddText(text, Brushes.White, FontStyles.Normal, windowControl.ExpectedOutput);
-		public void AddTextExpected(string text, FontStyle style) => AddText(text, Brushes.White, style, windowControl.ExpectedOutput);
-		public void AddTextExpected(string text, SolidColorBrush color) => AddText(text, color, FontStyles.Normal, windowControl.ExpectedOutput);
-		public void AddTextExpected(string text, FontStyle style, SolidColorBrush color) => AddText(text, color, style, windowControl.ExpectedOutput);
+		//public void AddTextExpected(string text) => AddText(text, Brushes.White, FontStyles.Normal, windowControl.ExpectedOutput);
+		//public void AddTextExpected(string text, FontStyle style) => AddText(text, Brushes.White, style, windowControl.ExpectedOutput);
+		//public void AddTextExpected(string text, SolidColorBrush color) => AddText(text, color, FontStyles.Normal, windowControl.ExpectedOutput);
+		//public void AddTextExpected(string text, FontStyle style, SolidColorBrush color) => AddText(text, color, style, windowControl.ExpectedOutput);
+
+		public void AddTextOutput(string text, SolidColorBrush color, FontStyle style, FontWeight weight, bool appendToPreviousLine)
+			=> AddText(text, color, style, weight, appendToPreviousLine, windowControl.ProgramOutput);
+
+		public void AddTextExpected(string text, SolidColorBrush color, FontStyle style, FontWeight weight, bool appendToPreviousLine)
+			=> AddText(text, color, style, weight, appendToPreviousLine, windowControl.ExpectedOutput);
 
 		/// <summary>
 		/// Private helper for adding colored text to a particular text box
 		/// </summary>
-		private void AddText(string text, SolidColorBrush color, FontStyle style, RichTextBox textBox)
+		private void AddText(string text, SolidColorBrush color, FontStyle style, FontWeight weight, bool appendToPreviousLine, RichTextBox textBox)
 		{
 			// Set up a text run with proper color
-			Run run = new Run(text) { Foreground = color, FontStyle = style };
+			Run run = new Run(text) { Foreground = color, FontStyle = style, FontWeight = weight };
 
-			// Create a paragraph for the run with no margin
-			Paragraph p = new Paragraph() { Margin = new Thickness(0) };
+			// Are we appending to the previous line and is there one?
+			if (appendToPreviousLine &&
+				textBox.Document.Blocks.Count > 0 &&
+				textBox.Document.Blocks.LastBlock is Paragraph p)
+			{
+				p.Inlines.Add(run);
+			}
+			else
+			{
+				// Not appending, or there is nothing to append to
+				Paragraph newPara = new Paragraph() { Margin = new Thickness(0) };
 
-			// Add the run to the paragraph, then add the paragraph to the output
-			p.Inlines.Add(run);
-			textBox.Document.Blocks.Add(p);
+				// Add the run to the paragraph, then add the paragraph to the output
+				newPara.Inlines.Add(run);
+				textBox.Document.Blocks.Add(newPara);
+			}
 		}
 	}
 }
