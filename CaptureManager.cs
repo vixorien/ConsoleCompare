@@ -99,21 +99,13 @@ namespace ConsoleCompare
 			proc.StartInfo.RedirectStandardOutput = true;
 			proc.StartInfo.RedirectStandardInput = true;
 
-			// Get rolling
-			// Note: Do NOT block the process here using WaitForExit(), as that
-			// will cause problems with the threaded nature of the UI system
-			proc.Start();
-
-			window.SetStatus("Application started");
-
-			// Testing
-			//MessageBox(CheckCodeForComments(), "Elements");
-
 			// Handle IO in a synchronous manner, but on another thread
+			// This function will start the process
 			System.Threading.Thread t = new System.Threading.Thread(
 				() => ManualIO()
 			);
 			t.Start();
+			window.SetStatus("Application started");
 
 		}
 
@@ -123,14 +115,25 @@ namespace ConsoleCompare
 		/// </summary>
 		private void ManualIO()
 		{
+			// Start the process here so we don't have to wait for the thread to start up
+			// Note: Do NOT block the process here using WaitForExit(), as that
+			// will cause problems with the threaded nature of the UI system
+			proc.Start();
+
 			// Track the previous line's ending to know if the next has to append
 			LineEndingType previousLineEnding = LineEndingType.NewLine;
+
+			// Track the match count as we go so we can report after
+			int lineCount = 0;
+			int matchCount = 0;
 
 			// Loop thorugh all simile lines and check against the process's output
 			for (int i = 0; i < simile.Count; i++)
 			{
 				// Will we be appending this line?
 				bool append = previousLineEnding == LineEndingType.SameLine;
+				if (!append)
+					lineCount++;
 
 				// Grab the current line and check the type
 				SimileLine line = simile[i];
@@ -142,7 +145,7 @@ namespace ConsoleCompare
 						// Grab the expected output and check the line ending type
 						string expected = output.Text;
 						string actual = null;
-						//actual = proc.StandardOutput.ReadLine();
+						
 						switch (output.LineEnding)
 						{
 							// New line, so just perform a standard ReadLine()
@@ -170,7 +173,10 @@ namespace ConsoleCompare
 						}
 
 						// Do they match?
-						SolidColorBrush color = (actual == expected) ? MatchingOutputColor : NonmatchingOutputColor;
+						bool match = actual == expected;
+						SolidColorBrush color = match ? MatchingOutputColor : NonmatchingOutputColor;
+						if (match)
+							matchCount++;
 
 						// Swap to the UI thread to update
 						ThreadHelper.JoinableTaskFactory.Run(async delegate
@@ -212,6 +218,11 @@ namespace ConsoleCompare
 						// Previous line ending is now a new line since we're simulating the user pressing enter
 						previousLineEnding = LineEndingType.NewLine;
 
+						// Assume input lines always match since we do those ourselves,
+						// though only if we're not appending to another line
+						if (!append)
+							matchCount++;
+
 						break;
 				}
 			}
@@ -221,8 +232,9 @@ namespace ConsoleCompare
 			{
 				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-				// All done, re-enable the button
+				// All done, re-enable the button and update the status bar
 				window.CaptureButtonEnabled = true;
+				window.SetStatus($"Application finished - {matchCount}/{lineCount} lines match");
 			});
 		}
 

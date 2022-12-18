@@ -56,6 +56,7 @@ namespace ConsoleCompare
 
 			// Create the capture manager with a reference to this window
 			capture = new CaptureManager(this);
+			SetStatus("Extension Loaded");
 		}
 
 		/// <summary>
@@ -82,7 +83,7 @@ namespace ConsoleCompare
 		/// <param name="text">New text, without the label "Status:"</param>
 		public void SetStatus(string text)
 		{
-			windowControl.TextStatus.Text = "Status: " + text;
+			windowControl.TextStatus.Text = text;
 		}
 
 		/// <summary>
