@@ -16,6 +16,16 @@ namespace ConsoleCompare
 {
 	internal class CaptureManager
 	{
+		public static SolidColorBrush BackgroundColor = Brushes.Black;
+		public static SolidColorBrush ExpectedOutputColor = Brushes.White;
+		public static SolidColorBrush MatchingOutputColor = Brushes.Green;
+		public static SolidColorBrush NonmatchingOutputColor = Brushes.OrangeRed;
+		public static FontStyle OutputFontStyle = FontStyles.Normal;
+		public static FontWeight OutputFontWeight = FontWeights.Normal;
+		public static FontStyle InputFontStyle = FontStyles.Italic;
+		public static FontWeight InputFontWeight = FontWeights.Bold;
+		public static bool InvertInputColors = false;
+
 
 		private DTE dte;
 		private ResultsWindow window;
@@ -30,6 +40,10 @@ namespace ConsoleCompare
 			this.window = window;
 
 			dte = Package.GetGlobalService(typeof(DTE)) as DTE;
+
+			// For reference: Use this to hook up solution-related events (like opening, closing, etc.)
+			IVsSolution solution = ServiceProvider.GlobalProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+			//solution.AdviseSolutionEvents(...);
 		}
 
 
@@ -68,22 +82,10 @@ namespace ConsoleCompare
 			}
 
 			// Reset
-			simile.ResetOutputIteration();
 			window.ClearAllText();
-
-			bool asyncIO = false;
 
 			// Create the process
 			proc = new System.Diagnostics.Process();
-
-			// Set up events if async
-			if (asyncIO)
-			{
-				proc.EnableRaisingEvents = true;
-				proc.Exited += Capture_ProcessExit;
-				proc.OutputDataReceived += Capture_DataReceived;
-				proc.ErrorDataReceived += Capture_ErrorReceived;
-			}
 
 			// Set up start info and redirects
 			proc.StartInfo.FileName = exePath;
@@ -98,31 +100,18 @@ namespace ConsoleCompare
 			// Note: Do NOT block the process here using WaitForExit(), as that
 			// will cause problems with the threaded nature of the UI system
 			proc.Start();
-			if (asyncIO)
-			{
-				proc.BeginErrorReadLine();
-				proc.BeginOutputReadLine();
-			}
 
 			window.SetStatus("Application started");
 
 			// Testing
 			//MessageBox(CheckCodeForComments(), "Elements");
 
-			// If we're manually handling IO, 
-			if (!asyncIO)
-			{
-				System.Threading.Thread t = new System.Threading.Thread(
-					() => ManualIO()
-				);
-				t.Start();
-			}
-			else
-			{
-				// Loop and send all input to the writer immediately so
-				// that the process can read it as necessary
-				simile.SendAllInput(proc.StandardInput);
-			}
+			// Handle IO in a synchronous manner, but on another thread
+			System.Threading.Thread t = new System.Threading.Thread(
+				() => ManualIO()
+			);
+			t.Start();
+
 		}
 
 
@@ -175,7 +164,7 @@ namespace ConsoleCompare
 						}
 
 						// Do they match?
-						SolidColorBrush color = (actual == expected) ? Brushes.Green : Brushes.OrangeRed;
+						SolidColorBrush color = (actual == expected) ? MatchingOutputColor : NonmatchingOutputColor;
 
 						// Swap to the UI thread to update
 						ThreadHelper.JoinableTaskFactory.Run(async delegate
@@ -183,8 +172,8 @@ namespace ConsoleCompare
 							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 							// Add the text to both boxes
-							window.AddTextOutput(actual, color, FontStyles.Normal, FontWeights.Normal, append);
-							window.AddTextExpected(expected, Brushes.White, FontStyles.Normal, FontWeights.Normal, append);
+							window.AddTextOutput(actual, color, BackgroundColor, OutputFontStyle, OutputFontWeight, append);
+							window.AddTextExpected(expected, ExpectedOutputColor, BackgroundColor, OutputFontStyle, OutputFontWeight, append);
 						});
 
 						// Save the previous ending
@@ -198,14 +187,20 @@ namespace ConsoleCompare
 						// Grab the data to send to the process, do so and put in both boxes
 						proc.StandardInput.WriteLine(input.Text);
 
+						// Check for color inversion
+						SolidColorBrush foreOutput = InvertInputColors ? BackgroundColor : MatchingOutputColor;
+						SolidColorBrush backOutput = InvertInputColors ? MatchingOutputColor : BackgroundColor;
+						SolidColorBrush foreExpected = InvertInputColors ? BackgroundColor : ExpectedOutputColor;
+						SolidColorBrush backExpected = InvertInputColors ? ExpectedOutputColor : BackgroundColor;
+
 						// Swap to the UI thread to update
 						ThreadHelper.JoinableTaskFactory.Run(async delegate
 						{
 							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 							// Add the text to both boxes
-							window.AddTextOutput(input.Text, Brushes.Green, FontStyles.Italic, FontWeights.UltraBold, append);
-							window.AddTextExpected(input.Text, Brushes.White, FontStyles.Italic, FontWeights.UltraBold, append);
+							window.AddTextOutput(input.Text, foreOutput, backOutput, InputFontStyle, InputFontWeight, append);
+							window.AddTextExpected(input.Text, foreExpected, backExpected, InputFontStyle, InputFontWeight, append);
 						});
 
 						// Previous line ending is now a new line since we're simulating the user pressing enter
@@ -216,64 +211,6 @@ namespace ConsoleCompare
 			}
 		}
 
-
-
-		private void Capture_DataReceived(object sender, DataReceivedEventArgs e)
-		{
-			// This is most likely on a different thread, so we need to swap
-			// to the main thread before doing any UI work
-			ThreadHelper.JoinableTaskFactory.Run(async delegate
-			{
-				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-				// Grab the output and expected output
-				string output = e.Data;
-				string expected = simile.GetNextOutput();
-
-				// Do they match?
-				SolidColorBrush color = (output == expected) ? Brushes.Green : Brushes.OrangeRed;
-
-				// Add the text to both boxes
-				//window.AddTextOutput(output, color);
-				//window.AddTextExpected(expected);
-			});
-		}
-
-
-		private void Capture_ErrorReceived(object sender, DataReceivedEventArgs e)
-		{
-			// Verify we have something, otherwise skip
-			if (string.IsNullOrEmpty(e.Data))
-				return;
-
-			// This is most likely on a different thread, so we need to swap
-			// to the main thread before doing any UI work
-			ThreadHelper.JoinableTaskFactory.Run(async delegate
-			{
-				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-				//window.AddTextOutput(e.Data, Brushes.Red);
-			});
-		}
-
-
-
-		private void Capture_ProcessExit(object sender, EventArgs e)
-		{
-			// This is most likely on a different thread, so we need to swap
-			// to the main thread before doing any UI work
-			ThreadHelper.JoinableTaskFactory.Run(async delegate
-			{
-				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-				// I think the process is the sender of this event?
-				System.Diagnostics.Process proc = sender as System.Diagnostics.Process;
-
-				// TODO: Track the lifetime of the process and update the UI accordingly
-				// - Maybe a stop/start button?
-
-				window.SetStatus("Application exited");
-			});
-		}
 
 		/// <summary>
 		/// Helper for finding the path to the first currently loaded project's built executable

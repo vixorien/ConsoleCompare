@@ -9,7 +9,7 @@ namespace ConsoleCompare
 	/// <summary>
 	/// Represents a set of console IO for comparison
 	/// </summary>
-	internal class ConsoleSimile : IEnumerable
+	internal class ConsoleSimile
 	{
 		// Overall requirements:
 		// - Multiples lines (probably just a List of them in order)
@@ -30,9 +30,6 @@ namespace ConsoleCompare
 		private List<SimileLine> allLines;
 		private List<SimileLineOutput> outputLines;
 		private List<SimileLineInput> inputLines;
-
-		// Iterator functionality (maybe turn into IEnumerable<string>?)
-		private int currentOutputIndex = 0;
 
 		/// <summary>
 		/// Gets the count of all lines (input and output) in the simile
@@ -83,35 +80,6 @@ namespace ConsoleCompare
 			inputLines.Add(input);
 		}
 
-		/// <summary>
-		/// Immediately sends all input to the given stream writer
-		/// </summary>
-		/// <param name="writer">Writer to which we write each line</param>
-		public void SendAllInput(StreamWriter writer)
-		{
-			foreach (SimileLineInput input in inputLines)
-				writer.WriteLine(input.Text);
-		}
-
-		/// <summary>
-		/// Gets the next line of expected output
-		/// </summary>
-		/// <returns>The next line of output, or null if there is no more</returns>
-		public string GetNextOutput()
-		{
-			if (currentOutputIndex >= outputLines.Count)
-				return null;
-
-			return outputLines[currentOutputIndex++].Text;
-		}
-
-		/// <summary>
-		/// Resets the output iteration back to the first line
-		/// </summary>
-		public void ResetOutputIteration()
-		{
-			currentOutputIndex = 0;
-		}
 
 		/// <summary>
 		/// Static helper for loading an entire simile from a file
@@ -134,92 +102,8 @@ namespace ConsoleCompare
 			// Parse whatever we read
 			return SimileParser.Parse(lines);
 		}
-
-		/// <summary>
-		/// Creates a new enumerator for this simile
-		/// </summary>
-		/// <returns>A new simile enumerator</returns>
-		public SimileEnumerator GetEnumerator()
-		{
-			return new SimileEnumerator(this);
-		}
-
-		/// <summary>
-		/// Creates a new enumerator for this simile
-		/// </summary>
-		/// <returns>A new simile enumerator</returns>
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
-		}
 	}
 
-	internal class SimileEnumerator : IEnumerator
-	{
-		// Fields
-		private int currentIndex;
-		private SimileLine currentLine;
-
-		/// <summary>
-		/// Gets the current simile line
-		/// </summary>
-		public SimileLine Current => currentLine;
-
-		/// <summary>
-		/// Gets the current simile line as a basic object
-		/// </summary>
-		object IEnumerator.Current => Current;
-
-		/// <summary>
-		/// Gets the simile for this enumerator
-		/// </summary>
-		public ConsoleSimile Simile { get; private set; }
-
-		/// <summary>
-		/// Creates an enumerator for a simile
-		/// </summary>
-		/// <param name="simile">The simile to enumerate</param>
-		public SimileEnumerator(ConsoleSimile simile)
-		{
-			Simile = simile;
-			Reset();
-		}
-
-		/// <summary>
-		/// Nothing to dispose, but required none-the-less
-		/// </summary>
-		public void Dispose() { }
-
-		/// <summary>
-		/// Moves the enumerator to the next line of the simile
-		/// </summary>
-		/// <returns>True if the enumerator still has data, false otherwise</returns>
-		public bool MoveNext()
-		{
-			// Increment forward and check validity
-			currentIndex++;
-
-			if (currentIndex < Simile.Count)
-			{
-				currentLine = Simile[currentIndex];
-				return true;
-			}
-			else
-			{
-				currentLine = null;
-				return false;
-			}
-		}
-
-		/// <summary>
-		/// Resets the enumerator back to the beginning of the simile
-		/// </summary>
-		public void Reset()
-		{
-			currentIndex = -1;
-			currentLine = null;
-		}
-	}
 
 	/// <summary>
 	/// Possible line endings for simile output

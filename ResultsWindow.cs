@@ -84,29 +84,20 @@ namespace ConsoleCompare
 			windowControl.ExpectedOutput.Document.Blocks.Clear();
 		}
 
-		//public void AddTextOutput(string text) => AddText(text, Brushes.White, FontStyles.Normal, windowControl.ProgramOutput);
-		//public void AddTextOutput(string text, FontStyle style) => AddText(text, Brushes.White, style, windowControl.ProgramOutput);
-		//public void AddTextOutput(string text, SolidColorBrush color) => AddText(text, color, FontStyles.Normal, windowControl.ProgramOutput);
-		//public void AddTextOutput(string text, FontStyle style, SolidColorBrush color) => AddText(text, color, style, windowControl.ProgramOutput);
 
-		//public void AddTextExpected(string text) => AddText(text, Brushes.White, FontStyles.Normal, windowControl.ExpectedOutput);
-		//public void AddTextExpected(string text, FontStyle style) => AddText(text, Brushes.White, style, windowControl.ExpectedOutput);
-		//public void AddTextExpected(string text, SolidColorBrush color) => AddText(text, color, FontStyles.Normal, windowControl.ExpectedOutput);
-		//public void AddTextExpected(string text, FontStyle style, SolidColorBrush color) => AddText(text, color, style, windowControl.ExpectedOutput);
+		public void AddTextOutput(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine)
+			=> AddText(text, color, backColor, style, weight, appendToPreviousLine, windowControl.ProgramOutput);
 
-		public void AddTextOutput(string text, SolidColorBrush color, FontStyle style, FontWeight weight, bool appendToPreviousLine)
-			=> AddText(text, color, style, weight, appendToPreviousLine, windowControl.ProgramOutput);
-
-		public void AddTextExpected(string text, SolidColorBrush color, FontStyle style, FontWeight weight, bool appendToPreviousLine)
-			=> AddText(text, color, style, weight, appendToPreviousLine, windowControl.ExpectedOutput);
+		public void AddTextExpected(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine)
+			=> AddText(text, color, backColor, style, weight, appendToPreviousLine, windowControl.ExpectedOutput);
 
 		/// <summary>
 		/// Private helper for adding colored text to a particular text box
 		/// </summary>
-		private void AddText(string text, SolidColorBrush color, FontStyle style, FontWeight weight, bool appendToPreviousLine, RichTextBox textBox)
+		private void AddText(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine, RichTextBox textBox)
 		{
 			// Set up a text run with proper color
-			Run run = new Run(text) { Foreground = color, FontStyle = style, FontWeight = weight };
+			Run run = new Run(text) { Foreground = color, Background = backColor, FontStyle = style, FontWeight = weight };
 
 			// Are we appending to the previous line and is there one?
 			if (appendToPreviousLine &&
