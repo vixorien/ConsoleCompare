@@ -33,6 +33,15 @@ namespace ConsoleCompare
 		private ResultsWindowControl windowControl;
 
 		/// <summary>
+		/// Gets or sets the state of the capture button
+		/// </summary>
+		public bool CaptureButtonEnabled
+		{
+			get => windowControl.ButtonCapture.IsEnabled;
+			set => windowControl.ButtonCapture.IsEnabled = value;
+		}
+
+		/// <summary>
 		/// Initializes a new instance of the <see cref="ResultsWindow"/> class.
 		/// </summary>
 		public ResultsWindow() : base(null)
@@ -65,6 +74,7 @@ namespace ConsoleCompare
 
 			capture.BeginCapture(check);
 		}
+
 
 		/// <summary>
 		/// Sets the status text

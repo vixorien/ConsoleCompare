@@ -54,6 +54,9 @@ namespace ConsoleCompare
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			// Turn off the capture button to prevent a second simultaneous run
+			window.CaptureButtonEnabled = false;
+
 			// Overwrite the current simile for comparison
 			this.simile = simile;
 			if (this.simile == null)
@@ -114,7 +117,10 @@ namespace ConsoleCompare
 
 		}
 
-
+		/// <summary>
+		/// Manually processes the input/output of the console process and compares
+		/// it against the console simile.
+		/// </summary>
 		private void ManualIO()
 		{
 			// Track the previous line's ending to know if the next has to append
@@ -209,6 +215,15 @@ namespace ConsoleCompare
 						break;
 				}
 			}
+
+			// Swap to the UI thread to update
+			ThreadHelper.JoinableTaskFactory.Run(async delegate
+			{
+				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+				// All done, re-enable the button
+				window.CaptureButtonEnabled = true;
+			});
 		}
 
 
@@ -265,79 +280,6 @@ namespace ConsoleCompare
 				OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
 		}
 
-		/// <summary>
-		/// Temporary placeholder for comment checking syntax
-		/// </summary>
-		private string CheckCodeForComments()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			string result = "";
-
-			Project proj = null;
-			foreach (Project p in dte.Solution.Projects)
-			{
-				// Get first project
-				// Yes, the .Items(0) syntax should work, but has been failing
-				proj = p;
-				break;
-			}
-
-			// Go through all project items looking for code files
-			foreach (ProjectItem item in proj.ProjectItems)
-			{
-				if (item.FileCodeModel == null)
-					continue;
-
-				// Each code element
-				foreach (CodeElement element in item.FileCodeModel.CodeElements)
-				{
-					result += WalkCodeTree(element, result, 0);
-				}
-			}
-
-			return result;
-		}
-
-		/// <summary>
-		/// Recursive function for checking all code elements for comments
-		/// </summary>
-		/// <param name="element"></param>
-		/// <param name="results"></param>
-		/// <param name="depth"></param>
-		/// <returns></returns>
-		private string WalkCodeTree(CodeElement element, string results, int depth)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			// Loop through each element recursively and add info about the element
-			string elementDetail = "Element: " + element.Kind + "\n";
-			results += elementDetail.PadLeft(elementDetail.Length + depth, '-');
-
-
-			// Check for function
-			if (element.Kind == vsCMElement.vsCMElementFunction)
-			{
-				// Check for an actual project element (and not external)
-				if (element.InfoLocation == vsCMInfoLocation.vsCMInfoLocationProject)
-				{
-					// Cast as function element?
-					CodeFunction func = element as CodeFunction;
-					if (func != null)
-					{
-						results += $"FOUND FUNCTION ELEMENT: {func.Name}\n";
-						results += "Comments? " + (string.IsNullOrEmpty(func.Comment) ? "No\n" : "Yes\n"); // Regular (non-xml) comments
-						results += "Doc Comments: " + (string.IsNullOrEmpty(func.DocComment) ? "No\n" : "Yes\n"); // XML comments
-					}
-				}
-			}
-
-			foreach (CodeElement child in element.Children)
-			{
-				results = WalkCodeTree(child, results, depth + 1);
-			}
-
-			return results;
-		}
+	
 	}
 }

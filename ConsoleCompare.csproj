@@ -54,6 +54,7 @@
     <Compile Include="CaptureManager.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="CommandPackage.cs" />
+    <Compile Include="CommentChecker.cs" />
     <Compile Include="ConsoleSimile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResultsWindow.cs" />
