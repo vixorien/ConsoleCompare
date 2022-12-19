@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vsshell="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
+			 xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
              Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}"
              Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}"
              mc:Ignorable="d"
@@ -19,6 +20,25 @@
 			<ColumnDefinition Width="*"/>
 			<ColumnDefinition Width="*"/>
 		</Grid.ColumnDefinitions>
+
+		<StackPanel
+			Grid.Row="0"
+			Grid.Column="0"
+			Grid.ColumnSpan="2"
+			Margin="0,0,0,0"
+			Height="25" 
+			VerticalAlignment="Top"
+			Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}" 
+			Orientation="Horizontal">
+
+
+			<TextBlock Text="Comparison File: " VerticalAlignment="Center" />
+			<TextBlock Text="No file loaded" VerticalAlignment="Center"/>
+			<Button Content="Choose File..."/>
+			<Button Content="Run" Margin="20,0,0,0"/>
+	
+
+		</StackPanel>
 
 		<Label 
 			Content="Program Output:" 
@@ -42,7 +62,21 @@
 		<RichTextBox Name="ProgramOutput" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Cascadia Code" Foreground="White" Background="Black" IsReadOnly="True" ScrollViewer.ScrollChanged="SyncScrollChanged" FontSize="14"/>
 		<RichTextBox Name="ExpectedOutput" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontFamily="Cascadia Code" Background="Black" Foreground="White" IsReadOnly="True" ScrollViewer.ScrollChanged="SyncScrollChanged" FontSize="14"/>
 
-		<Button Grid.Row="0" Grid.Column="1" x:Name="ButtonCapture" Content="Run Project" Height="31" Margin="0,10,10,0" VerticalAlignment="Top" Click="ButtonCapture_Click" HorizontalAlignment="Right" Width="105"/>
+		<Button 
+			Grid.Row="0" 
+			Grid.Column="0" 
+			Name="ButtonCapture" 
+			Content="Run Project" 
+			Height="34" 
+			Margin="10,36,172,0" 
+			VerticalAlignment="Top" 
+			Click="ButtonCapture_Click"
+			Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"/>
+		<!-- 
+		- NOTE: The above "Style" resource attrib works better than individually handling possible colors 
+		- This seems to work mostly (only?) for interactive elements - can't find a style for labels
+		- Also keeps things visible in the damned designer
+		-->
 
 		<StatusBar Margin="0" Grid.Row="2" Grid.ColumnSpan="2" 
 				   Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}"
@@ -62,5 +96,6 @@
 				<ProgressBar Margin="1" Width="100" Height="12"/>
 			</StatusBarItem>-->
 		</StatusBar>
+		
 	</Grid>
 </UserControl>
