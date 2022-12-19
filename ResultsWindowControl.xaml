@@ -5,14 +5,17 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vsshell="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
 			 xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
+			 xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
+			 xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
              Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}"
              Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}"
              mc:Ignorable="d"
              d:DesignHeight="434.448" d:DesignWidth="539.8"
              Name="MyToolWindow">
+	
 	<Grid>
 		<Grid.RowDefinitions>
-			<RowDefinition Height="100"/>
+			<RowDefinition Height="60"/>
 			<RowDefinition Height="*"/>
 			<RowDefinition Height="25"/>
 		</Grid.RowDefinitions>
@@ -25,18 +28,56 @@
 			Grid.Row="0"
 			Grid.Column="0"
 			Grid.ColumnSpan="2"
-			Margin="0,0,0,0"
+			Margin="10,5,0,0"
 			Height="25" 
 			VerticalAlignment="Top"
 			Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}" 
 			Orientation="Horizontal">
 
+			<Button 
+				Name="ButtonCapture" 
+				Click="ButtonCapture_Click"
+				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
+				MinWidth="5"
+				ToolTip="Run Application">
+				<!-- 
+					- NOTE: The above "Style" resource attrib works better than individually handling possible colors 
+					- This seems to work mostly (only?) for interactive elements - can't find a style for labels
+					- Also keeps things visible in the damned designer
+				-->
+				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Run}"/>
+			</Button>
 
-			<TextBlock Text="Comparison File: " VerticalAlignment="Center" />
-			<TextBlock Text="No file loaded" VerticalAlignment="Center"/>
-			<Button Content="Choose File..."/>
-			<Button Content="Run" Margin="20,0,0,0"/>
-	
+			<TextBlock 
+				Text="Comparison File: " 
+				VerticalAlignment="Center" 
+				Margin="10,0,0,0"/>
+
+			<TextBlock 
+				Text="No file loaded" 
+				Width="200"
+				VerticalAlignment="Center"
+				Padding="3"
+				Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"/>
+
+			
+			<Button
+				Name="ButtonLoadSimile"
+				Click="ButtonLoadSimile_Click"
+				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
+				MinWidth="5"
+				MinHeight="5"
+				Height="20"
+				Margin="10,0,0,0"
+				ToolTip="Open Comparison File">
+
+				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.OpenFile}"/>
+
+			</Button>
+			<!--
+				Link for image service / catalog:
+				https://learn.microsoft.com/en-us/visualstudio/extensibility/image-service-and-catalog?view=vs-2022
+			-->
 
 		</StackPanel>
 
@@ -46,8 +87,8 @@
 			Grid.Row="0" 
 			HorizontalAlignment="Left" 
 			Width="105" 
-			Margin="10,70,0,0"
-			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}"/>
+			Margin="10,30,0,0"
+			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}" Height="30" VerticalAlignment="Top"/>
 
 
 		<Label 
@@ -56,31 +97,16 @@
 			Grid.Row="0" 
 			HorizontalAlignment="Left" 
 			Width="105" 
-			Margin="10,70,0,0"
-			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}"/>
+			Margin="10,30,0,0"
+			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}" Height="30" VerticalAlignment="Top"/>
 
 		<RichTextBox Name="ProgramOutput" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Cascadia Code" Foreground="White" Background="Black" IsReadOnly="True" ScrollViewer.ScrollChanged="SyncScrollChanged" FontSize="14"/>
 		<RichTextBox Name="ExpectedOutput" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontFamily="Cascadia Code" Background="Black" Foreground="White" IsReadOnly="True" ScrollViewer.ScrollChanged="SyncScrollChanged" FontSize="14"/>
 
-		<Button 
-			Grid.Row="0" 
-			Grid.Column="0" 
-			Name="ButtonCapture" 
-			Content="Run Project" 
-			Height="34" 
-			Margin="10,36,172,0" 
-			VerticalAlignment="Top" 
-			Click="ButtonCapture_Click"
-			Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"/>
-		<!-- 
-		- NOTE: The above "Style" resource attrib works better than individually handling possible colors 
-		- This seems to work mostly (only?) for interactive elements - can't find a style for labels
-		- Also keeps things visible in the damned designer
-		-->
 
 		<StatusBar Margin="0" Grid.Row="2" Grid.ColumnSpan="2" 
-				   Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}"
-				   Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}">
+				   Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"
+				   Foreground="{DynamicResource {x:Static vsshell:VsBrushes.StatusBarTextKey}}">
 			<StatusBarItem>
 				<TextBlock Name="LabelStatus" Text="Status:"/>
 			</StatusBarItem>
@@ -96,6 +122,6 @@
 				<ProgressBar Margin="1" Width="100" Height="12"/>
 			</StatusBarItem>-->
 		</StatusBar>
-		
+
 	</Grid>
 </UserControl>

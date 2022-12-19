@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 
 namespace ConsoleCompare
@@ -15,9 +16,12 @@ namespace ConsoleCompare
 	/// # to expect a blank in the output
 	/// 
 	/// # Line notation:
-	/// # . means a standard line that ends with a newline
-	/// # ; means a line without a newline, generally right before user input 
+	/// # # means comment
+	/// # . means a standard line that ends with a newline, effectively Console.WriteLine()
+	/// # ; means a line without a newline, generally right before user input, effectively Console.Write()
 	/// # > means input from the user
+	/// #
+	/// # Note: Any other starting character is considered invalid
 	/// 
 	/// .Hello, World!
 	/// ;What is your name?
@@ -35,9 +39,21 @@ namespace ConsoleCompare
 	internal static class SimileParser
 	{
 		/// <summary>
+		/// Parses a file into a ConsoleSimile object if possible
+		/// </summary>
+		/// <param name="filePath">Path to the file</param>
+		/// <returns>A new ConsoleSimile object containing the simile</returns>
+		public static ConsoleSimile ParseFromFile(string filePath)
+		{
+			string[] lines = File.ReadAllLines(filePath);
+			return Parse(lines);
+		}
+
+		/// <summary>
 		/// Parses an array of lines into a ConsoleSimile object
 		/// </summary>
 		/// <param name="lines">Array of lines to parse</param>
+		/// <returns>A new ConsoleSimile object containing the simile</returns>
 		public static ConsoleSimile Parse(string[] lines)
 		{
 			ConsoleSimile result = new ConsoleSimile();

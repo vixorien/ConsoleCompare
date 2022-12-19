@@ -243,22 +243,20 @@ namespace ConsoleCompare
 		/// Helper for finding the path to the first currently loaded project's built executable
 		/// </summary>
 		/// <returns>Full path to the executable of the (first) current project</returns>
-		private string FindPathToExecutable()
+		public string FindPathToExecutable()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			// Find the first project using a foreach loop, as using
-			// the .Item(0) indexing was problematic
+			// the .Item(0) indexing was problematic.  Seems like the first
+			// project is index 1, which either means the overall indexing is
+			// 1-based (weird) or there is some other object sitting at index 0
 			Project firstProject = null;
 			foreach (Project p in dte.Solution.Projects)
 			{
-				// Dirty, but relying on foreach
-				// enumeration due to issues with .Item()
-				if (firstProject == null)
-				{
-					firstProject = p;
-					break;
-				}
+				// Dirty, but relying on enumeration due to issues with .Item()
+				firstProject = p;
+				break;
 			}
 
 			// Path creation
@@ -274,6 +272,29 @@ namespace ConsoleCompare
 				exePath = exePath.Replace(".dll", ".exe");
 
 			return exePath;
+		}
+
+		/// <summary>
+		/// Helper for finding the path to the first project's folder
+		/// </summary>
+		/// <returns>The path to the first project's folder</returns>
+		public string FindPathToProjectFolder()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			// Find the first project using a foreach loop, as using
+			// the .Item(0) indexing was problematic.  Seems like the first
+			// project is index 1, which either means the overall indexing is
+			// 1-based (weird) or there is some other object sitting at index 0
+			Project firstProject = null;
+			foreach (Project p in dte.Solution.Projects)
+			{
+				// Dirty, but relying on enumeration due to issues with .Item()
+				firstProject = p;
+				break;
+			}
+
+			return firstProject.Properties.Item("FullPath").Value.ToString();
 		}
 
 		/// <summary>

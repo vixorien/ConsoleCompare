@@ -5,6 +5,7 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Win32;
 
 namespace ConsoleCompare
 {
@@ -57,6 +58,25 @@ namespace ConsoleCompare
 			// Create the capture manager with a reference to this window
 			capture = new CaptureManager(this);
 			SetStatus("Extension Loaded");
+		}
+
+		/// <summary>
+		/// Shows an open file dialog and loads a simile file (if chosen)
+		/// </summary>
+		public void LoadSimileUsingFileDialog()
+		{
+			// Set up the dialog
+			OpenFileDialog open = new OpenFileDialog();
+			open.InitialDirectory = capture.FindPathToProjectFolder();
+			open.Filter = "Console Compare Simile Files|*.simile";
+
+			// Show and check result
+			bool? result = open.ShowDialog();
+			if(result.HasValue && result.Value == true)
+			{
+				ConsoleSimile simile = SimileParser.ParseFromFile(open.FileName);
+
+			}
 		}
 
 		/// <summary>

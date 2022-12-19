@@ -21,15 +21,28 @@ namespace ConsoleCompare
 			this.InitializeComponent();
 		}
 
-
+		/// <summary>
+		/// Begins a run of the application and captures the output, comparing
+		/// it to a set of predefined output
+		/// </summary>
 		private void ButtonCapture_Click(object sender, RoutedEventArgs e)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-
 			window.BeginCapture();
 		}
 
+		/// <summary>
+		/// Loads a simile file
+		/// </summary>
+		private void ButtonLoadSimile_Click(object sender, RoutedEventArgs e)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			window.LoadSimileUsingFileDialog();
+		}
 
+		/// <summary>
+		/// Ensures the two text boxes remain sync'd as they scroll
+		/// </summary>
 		private void SyncScrollChanged(object sender, ScrollChangedEventArgs e)
 		{
 			RichTextBox toSync = (sender == this.ExpectedOutput) ? this.ProgramOutput : this.ExpectedOutput;
