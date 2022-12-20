@@ -32,6 +32,15 @@ namespace ConsoleCompare
 		}
 
 		/// <summary>
+		/// Stops a capture in progress, if one exists
+		/// </summary>
+		private void ButtonStop_Click(object sender, RoutedEventArgs e)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			window.StopCapture();
+		}
+
+		/// <summary>
 		/// Loads a simile file
 		/// </summary>
 		private void ButtonLoadSimile_Click(object sender, RoutedEventArgs e)
@@ -50,5 +59,5 @@ namespace ConsoleCompare
 			toSync.ScrollToVerticalOffset(e.VerticalOffset);
 			toSync.ScrollToHorizontalOffset(e.HorizontalOffset);
 		}
-	}
+    }
 }

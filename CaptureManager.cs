@@ -26,19 +26,22 @@ namespace ConsoleCompare
 		public static FontWeight InputFontWeight = FontWeights.Bold;
 		public static bool InvertInputColors = false;
 
-
+		// Visual studio-level stuff
 		private DTE dte;
 		private ResultsWindow window;
-		private System.Diagnostics.Process proc;
 
-		private ConsoleSimile simile;
+		// Process stuff
+		private ConsoleSimile simile; 
+		private System.Diagnostics.Process proc;
+		private System.Threading.Thread procThread;
+		private bool killThread; // Super unsafe - should probably replace with cancellation token stuff
+		
 
 		public CaptureManager(ResultsWindow window)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			this.window = window;
-
 			dte = Package.GetGlobalService(typeof(DTE)) as DTE;
 
 			// For reference: Use this to hook up solution-related events (like opening, closing, etc.)
@@ -56,6 +59,8 @@ namespace ConsoleCompare
 
 			// Turn off the capture button to prevent a second simultaneous run
 			window.CaptureButtonEnabled = false;
+			window.StopButtonEnabled = true;
+			window.OpenButtonEnabled = false;
 
 			// Overwrite the current simile for comparison
 			this.simile = simile;
@@ -85,7 +90,7 @@ namespace ConsoleCompare
 			}
 
 			// Reset
-			window.ClearAllText();
+			window.ClearAllOutputText();
 
 			// Create the process
 			proc = new System.Diagnostics.Process();
@@ -101,10 +106,11 @@ namespace ConsoleCompare
 
 			// Handle IO in a synchronous manner, but on another thread
 			// This function will start the process
-			System.Threading.Thread t = new System.Threading.Thread(
+			killThread = false;
+			procThread = new System.Threading.Thread(
 				() => ManualIO()
 			);
-			t.Start();
+			procThread.Start();
 			window.SetStatus("Application started");
 
 		}
@@ -225,6 +231,10 @@ namespace ConsoleCompare
 
 						break;
 				}
+
+				// Kill the thread early?
+				if (killThread)
+					break;
 			}
 
 			// Swap to the UI thread to update
@@ -234,8 +244,32 @@ namespace ConsoleCompare
 
 				// All done, re-enable the button and update the status bar
 				window.CaptureButtonEnabled = true;
-				window.SetStatus($"Application finished - {matchCount}/{lineCount} lines match");
+				window.StopButtonEnabled = false;
+				window.OpenButtonEnabled = true;
+
+				if (killThread)
+					window.SetStatus("Application stopped by user");
+				else
+					window.SetStatus($"Application finished - {matchCount}/{lineCount} lines match");
 			});
+
+			killThread = false;
+		}
+
+		/// <summary>
+		/// Stops a capture in progress, if one exists
+		/// </summary>
+		public bool StopCapture()
+		{
+			// Is there a thread going at all?
+			if (procThread == null || !procThread.IsAlive)
+				return false;
+
+			// Attempt to kill the process
+			// TODO: Determine wtf this does to the ManualIO thread!
+			proc.Kill();
+			killThread = true;
+			return true;
 		}
 
 

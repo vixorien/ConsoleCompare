@@ -56,14 +56,17 @@ namespace ConsoleCompare
 		/// <returns>A new ConsoleSimile object containing the simile</returns>
 		public static ConsoleSimile Parse(string[] lines)
 		{
-			ConsoleSimile result = new ConsoleSimile();
 			if (lines == null || lines.Length == 0)
-				return result;
+				return null;
 
 			// Loop through lines and process each
+			ConsoleSimile result = new ConsoleSimile();
 			foreach (string line in lines)
 			{
-				ParseLine(line, result);
+				bool success = ParseLine(line, result);
+				
+				// TODO: Should an invalid parse negate the whole simile?
+				//       Or just be ignored?
 			}
 
 			return result;
@@ -74,11 +77,12 @@ namespace ConsoleCompare
 		/// </summary>
 		/// <param name="line">Line to parse</param>
 		/// <param name="simile">Simile to add to</param>
-		private static void ParseLine(string line, ConsoleSimile simile)
+		/// <returns>True if the line is valid or blank, false if invalid</returns>
+		private static bool ParseLine(string line, ConsoleSimile simile)
 		{
-			// Check for invalid line
+			// Check for empty line - return true as empty lines are perfectly valid
 			if (string.IsNullOrEmpty(line))
-				return;
+				return true;
 
 			// Check the first character
 			switch (line[0])
@@ -91,10 +95,12 @@ namespace ConsoleCompare
 				// Comments: Simply ignore, but here if we want to do something
 				case '#': break;
 
-				// Other: Ignoring for now, but maybe throw an exception to 
-				// display a message about an invalid format?
-				default: break;
+				// Any other character results in an invalid parse
+				default: return false;
 			}
+
+			// Valid line, even if a comment
+			return true;
 		}
 	}
 }

@@ -6,6 +6,8 @@ using System.Windows.Media;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using System.IO;
+using Microsoft.VisualStudio.Imaging;
 
 namespace ConsoleCompare
 {
@@ -34,12 +36,56 @@ namespace ConsoleCompare
 		private ResultsWindowControl windowControl;
 
 		/// <summary>
+		/// The current simile for console comparison
+		/// </summary>
+		private ConsoleSimile currentSimile;
+
+		/// <summary>
+		/// The file that corresponds to the current simile
+		/// </summary>
+		private string currentSimileFile;
+
+
+		/// <summary>
 		/// Gets or sets the state of the capture button
 		/// </summary>
 		public bool CaptureButtonEnabled
 		{
 			get => windowControl.ButtonCapture.IsEnabled;
-			set => windowControl.ButtonCapture.IsEnabled = value;
+			set
+			{
+				// Set the image to the opposite value (disabled button == grayscale)
+				windowControl.ButtonCapture.IsEnabled = value;
+				(windowControl.ButtonCapture.Content as CrispImage).Grayscale = !value;
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets the state of the capture button
+		/// </summary>
+		public bool StopButtonEnabled
+		{
+			get => windowControl.ButtonStop.IsEnabled;
+			set
+			{
+				// Set the image to the opposite value (disabled button == grayscale)
+				windowControl.ButtonStop.IsEnabled = value;
+				( windowControl.ButtonStop.Content as CrispImage).Grayscale = !value;
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets the state of the capture button
+		/// </summary>
+		public bool OpenButtonEnabled
+		{
+			get => windowControl.ButtonLoadSimile.IsEnabled;
+			set
+			{
+				// Set the image to the opposite value (disabled button == grayscale)
+				windowControl.ButtonLoadSimile.IsEnabled = value;
+				(windowControl.ButtonLoadSimile.Content as CrispImage).Grayscale = !value;
+			}
 		}
 
 		/// <summary>
@@ -58,6 +104,13 @@ namespace ConsoleCompare
 			// Create the capture manager with a reference to this window
 			capture = new CaptureManager(this);
 			SetStatus("Extension Loaded");
+
+			// No simile yet, so no capture yet
+			currentSimile = null;
+			currentSimileFile = null;
+			CaptureButtonEnabled = false;
+			StopButtonEnabled = false;
+			OpenButtonEnabled = true;
 		}
 
 		/// <summary>
@@ -65,6 +118,8 @@ namespace ConsoleCompare
 		/// </summary>
 		public void LoadSimileUsingFileDialog()
 		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
 			// Set up the dialog
 			OpenFileDialog open = new OpenFileDialog();
 			open.InitialDirectory = capture.FindPathToProjectFolder();
@@ -72,10 +127,23 @@ namespace ConsoleCompare
 
 			// Show and check result
 			bool? result = open.ShowDialog();
-			if(result.HasValue && result.Value == true)
+			if (result.HasValue && result.Value == true)
 			{
-				ConsoleSimile simile = SimileParser.ParseFromFile(open.FileName);
+				// Parse and check
+				currentSimile = SimileParser.ParseFromFile(open.FileName);
+				currentSimileFile = currentSimile == null ? null : Path.GetFileName(open.FileName);
 
+				// Update window based on results
+				if (currentSimile == null)
+				{
+					windowControl.TextSimileFileName.Text = "No file loaded";
+					CaptureButtonEnabled = false;
+				}
+				else
+				{
+					windowControl.TextSimileFileName.Text = currentSimileFile;
+					CaptureButtonEnabled = true;
+				}
 			}
 		}
 
@@ -84,16 +152,33 @@ namespace ConsoleCompare
 		/// </summary>
 		public void BeginCapture()
 		{
-			// Just testing...
-			ConsoleSimile check = new ConsoleSimile();
-			check.AddOutput("Hello, World!");
-			for (int i = 0; i < 10; i++)
-				check.AddOutput(i.ToString());
-			check.AddOutput("Enter your name: ", LineEndingType.SameLine);
-			check.AddInput("Chris");
-			check.AddOutput("Your name is Chris");
+			ThreadHelper.ThrowIfNotOnUIThread();
 
-			capture.BeginCapture(check);
+			// Can't capture without a simile
+			if (currentSimile == null)
+				return;
+
+			capture.BeginCapture(currentSimile);
+
+			//// Just testing...
+			//ConsoleSimile check = new ConsoleSimile();
+			//check.AddOutput("Hello, World!");
+			//for (int i = 0; i < 10; i++)
+			//	check.AddOutput(i.ToString());
+			//check.AddOutput("Enter your name: ", LineEndingType.SameLine);
+			//check.AddInput("Chris");
+			//check.AddOutput("Your name is Chris");
+
+			//capture.BeginCapture(check);
+		}
+
+		/// <summary>
+		/// Stops a capture in progress if there is one
+		/// </summary>
+		public void StopCapture()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			capture.StopCapture();
 		}
 
 
@@ -109,7 +194,7 @@ namespace ConsoleCompare
 		/// <summary>
 		/// Clears the text of both rich text boxes (output and expected)
 		/// </summary>
-		public void ClearAllText()
+		public void ClearAllOutputText()
 		{
 			windowControl.ProgramOutput.Document.Blocks.Clear();
 			windowControl.ExpectedOutput.Document.Blocks.Clear();

@@ -45,15 +45,26 @@
 					- This seems to work mostly (only?) for interactive elements - can't find a style for labels
 					- Also keeps things visible in the damned designer
 				-->
-				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Run}"/>
+				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Run}" />
+			</Button>
+
+			<Button 
+				Name="ButtonStop" 
+				Click="ButtonStop_Click"
+				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
+				MinWidth="5"
+				Margin="3,0,0,0"
+				ToolTip="Stop Application">
+				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Stop}"/>
 			</Button>
 
 			<TextBlock 
 				Text="Comparison File: " 
 				VerticalAlignment="Center" 
-				Margin="10,0,0,0"/>
+				Margin="20,0,0,0"/>
 
 			<TextBlock 
+				Name="TextSimileFileName"
 				Text="No file loaded" 
 				Width="200"
 				VerticalAlignment="Center"
