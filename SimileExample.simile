@@ -3,10 +3,6 @@
 
 # Blank lines are completely ignored
 
-# There are two types of lines used by the program:
-# - Output lines, which start with .
-# - Input lines, which start with >
-
 # Actual data starts here:
 .Hello, World!
 .0
@@ -22,3 +18,4 @@
 ;What is your name?
 >Chris
 .Hello, Chris!
+.This line has a number [[type=int]] here

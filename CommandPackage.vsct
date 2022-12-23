@@ -74,7 +74,7 @@
         <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
         <Icon guid="guidImages1" id="bmpPicSearch" />
         <Strings>
-          <ButtonText>Console Capture</ButtonText>
+          <ButtonText>Console Compare</ButtonText>
         </Strings>
       </Button>
     </Buttons>

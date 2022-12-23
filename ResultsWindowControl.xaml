@@ -40,7 +40,7 @@
 				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
 				MinWidth="5"
 				ToolTip="Run Application">
-				<!-- 
+				<!--
 					- NOTE: The above "Style" resource attrib works better than individually handling possible colors 
 					- This seems to work mostly (only?) for interactive elements - can't find a style for labels
 					- Also keeps things visible in the damned designer
@@ -125,13 +125,6 @@
 				<TextBlock Name="TextStatus" Text="Loading..."/>
 			</StatusBarItem>
 
-			<!--<StatusBarItem Width="200">
-				<TextBlock Name="Path" Text="C:\File.txt"/>
-			</StatusBarItem>
-			<Separator/>
-			<StatusBarItem>
-				<ProgressBar Margin="1" Width="100" Height="12"/>
-			</StatusBarItem>-->
 		</StatusBar>
 
 	</Grid>

@@ -148,10 +148,8 @@ namespace ConsoleCompare
 					// Line is output from the console process
 					case SimileLineOutput output:
 
-						// Grab the expected output and check the line ending type
-						string expected = output.Text;
+						// Create the actual text based on line ending
 						string actual = null;
-						
 						switch (output.LineEnding)
 						{
 							// New line, so just perform a standard ReadLine()
@@ -164,7 +162,7 @@ namespace ConsoleCompare
 								actual = "";
 								int charCount = 0;
 								while(
-									charCount < expected.Length && 
+									output.RawText != actual &&
 									!proc.StandardOutput.EndOfStream && 
 									proc.StandardOutput.Peek() != -1
 								)
@@ -179,7 +177,8 @@ namespace ConsoleCompare
 						}
 
 						// Do they match?
-						bool match = actual == expected;
+						bool match = output.CompareLine(actual);
+						string expectedReport = match ? actual : output.RawText;
 						SolidColorBrush color = match ? MatchingOutputColor : NonmatchingOutputColor;
 						if (match)
 							matchCount++;
@@ -191,7 +190,7 @@ namespace ConsoleCompare
 
 							// Add the text to both boxes
 							window.AddTextOutput(actual, color, BackgroundColor, OutputFontStyle, OutputFontWeight, append);
-							window.AddTextExpected(expected, ExpectedOutputColor, BackgroundColor, OutputFontStyle, OutputFontWeight, append);
+							window.AddTextExpected(expectedReport, ExpectedOutputColor, BackgroundColor, OutputFontStyle, OutputFontWeight, append);
 						});
 
 						// Save the previous ending

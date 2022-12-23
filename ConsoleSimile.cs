@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
+using System.Windows.Media.Animation;
 using System.Windows.Navigation;
 
 namespace ConsoleCompare
@@ -28,8 +30,6 @@ namespace ConsoleCompare
 		// - Maybe be able to "step through" like an iterator?
 
 		private List<SimileLine> allLines;
-		private List<SimileLineOutput> outputLines;
-		private List<SimileLineInput> inputLines;
 
 		/// <summary>
 		/// Gets the count of all lines (input and output) in the simile
@@ -49,8 +49,6 @@ namespace ConsoleCompare
 		public ConsoleSimile()
 		{
 			allLines = new List<SimileLine>();
-			outputLines = new List<SimileLineOutput>();
-			inputLines = new List<SimileLineInput>();
 		}
 
 		/// <summary>
@@ -61,10 +59,13 @@ namespace ConsoleCompare
 		public void AddOutput(string text, LineEndingType lineEnding = LineEndingType.NewLine)
 		{
 			SimileLineOutput output = new SimileLineOutput(text, lineEnding);
-
-			// Add to the overall lines and the output list
 			allLines.Add(output);
-			outputLines.Add(output);
+		}
+
+		
+		public void AddOutput(SimileLineOutput output)
+		{
+			allLines.Add(output);
 		}
 
 		/// <summary>
@@ -74,10 +75,7 @@ namespace ConsoleCompare
 		public void AddInput(string text)
 		{
 			SimileLineInput input = new SimileLineInput(text);
-
-			// Add to the overall lines and the input by itself
 			allLines.Add(input);
-			inputLines.Add(input);
 		}
 
 
@@ -126,33 +124,238 @@ namespace ConsoleCompare
 	/// </summary>
 	internal class SimileLineInput : SimileLine
 	{
-		public string Text { get; private set; }
+		public string Text { get; }
 
-		public SimileLineInput(string text)
+		public SimileLineInput(string text) => Text = text;
+	}
+
+	/// <summary>
+	/// A single line of output
+	/// </summary>
+	internal class SimileLineOutput : SimileLine
+	{
+		// Overall output is made up of multiple output elements	
+		private List<SimileOutputElement> outputElements;
+
+		/// <summary>
+		/// Gets the type of line ending for this output
+		/// </summary>
+		public LineEndingType LineEnding { get; }
+
+		/// <summary>
+		/// Gets the raw text of this line, containing any
+		/// numeric output tags
+		/// </summary>
+		public string RawText { get; }
+
+
+		public SimileLineOutput(string rawText, LineEndingType lineEnding)
 		{
-			Text = text;
+			LineEnding = lineEnding;
+			RawText = rawText;
+			outputElements = new List<SimileOutputElement>();
+		}
+
+		/// <summary>
+		/// Adds a simple text element to the line
+		/// </summary>
+		/// <param name="text">Simple text data</param>
+		public void AddTextElement(string text)
+		{
+			outputElements.Add(new SimileOutputText(text));
+		}
+
+		/// <summary>
+		/// Adds a numeric element to the line
+		/// </summary>
+		/// <typeparam name="T">The type of data</typeparam>
+		/// <param name="type">The type of numeric data</param>
+		/// <param name="min">The inclusive minimum expected value, or null for no minimum</param>
+		/// <param name="max">The inclusive maximum expected value, or null for no maximum</param>
+		/// <param name="set">The set of valid values, or null for no expected values</param>
+		/// <param name="precision">The amount of precision for rounding, or null for no rounding</param>
+		public void AddNumericElement<T>(SimileNumericType type, T? min = null, T? max = null, List<T> set = null, int? precision = null)
+			where T : struct, IComparable
+		{
+			SimileOutputNumeric<T> number = new SimileOutputNumeric<T>(type)
+			{
+				Minimum = min,
+				Maximum = max,
+				Precision = precision
+			};
+
+			if(set != null)
+				number.ValueSet.AddRange(set);
+
+			outputElements.Add(number);
+		}
+
+
+		/// <summary>
+		/// Adds a complete numeric element to the line
+		/// </summary>
+		/// <typeparam name="T">The type of data</typeparam>
+		/// <param name="numericElement">The complete numeric element to add</param>
+		public void AddNumericElement<T>(SimileOutputNumeric<T> numericElement)
+			where T:struct, IComparable
+		{
+			outputElements.Add(numericElement);
+		}
+
+		/// <summary>
+		/// Compares the overall line (made up of all output elements in order)
+		/// to the given string
+		/// </summary>
+		/// <param name="comparison">String for comparison</param>
+		/// <returns>True if the lines are equivalent, false otherwise</returns>
+		public bool CompareLine(string comparison)
+		{
+			// Null is always incorrect
+			if (comparison == null)
+				return false;
+
+			// Loop through the elements in order and verify matches
+			foreach (SimileOutputElement element in outputElements)
+			{
+				if (!element.AtBeginningOf(comparison, out comparison))
+					return false;
+			}
+
+			// All elements matched
+			return true;
+		}
+
+	}
+
+	/// <summary>
+	/// Represents a single element of a larger output line
+	/// </summary>
+	internal abstract class SimileOutputElement {
+		/// <summary>
+		/// Determines if this element is at the beginning of the
+		/// given string and sends out the remainder of the string
+		/// </summary>
+		/// <param name="line">The line to check</param>
+		/// <param name="remainder">What's left after this element is removed</param>
+		/// <returns>True if this elements starts the line, false otherwise</returns>
+		public abstract bool AtBeginningOf(string line, out string remainder);
+	}
+
+	/// <summary>
+	/// Represents a single text element of a larger output line
+	/// </summary>
+	internal class SimileOutputText : SimileOutputElement
+	{
+		public string Text { get; }
+		public SimileOutputText(string text) => Text = text;
+
+		/// <summary>
+		/// Determines if this element is at the beginning of the
+		/// given string and sends out the remainder of the string
+		/// </summary>
+		/// <param name="line">The line to check</param>
+		/// <param name="remainder">What's left after this element is removed</param>
+		/// <returns>True if this elements starts the line, false otherwise</returns>
+		public override bool AtBeginningOf(string line, out string remainder)
+		{
+			bool starts = line.StartsWith(Text);
+			if (starts)
+			{
+				remainder = line.Substring(Text.Length);
+				return true;
+			}
+			else
+			{
+				remainder = line;
+				return false;
+			}
 		}
 	}
 
 	/// <summary>
-	/// Simple line of output
+	/// Represents a single numeric element of a larger output line
 	/// </summary>
-	internal class SimileLineOutput : SimileLine
+	/// <typeparam name="T">The numeric data type of the element</typeparam>
+	internal class SimileOutputNumeric<T> : SimileOutputElement
+		where T : struct, IComparable
 	{
+		public SimileNumericType NumericType { get; }
+		public T? Minimum { get; set; }
+		public T? Maximum { get; set; }
+		public List<T> ValueSet { get; }
+		public int? Precision { get; set; }
 
-		// TODO: Output should be made up of one or more output elements
-		// - Each element is one of "text", "text from a set", "number", etc.
-		// - Final text of the line is a concatenation of all elements in order
-
-		public string Text { get; private set; }
-
-		public LineEndingType LineEnding { get; private set; } // TODO: Rename this
-
-		public SimileLineOutput(string text, LineEndingType lineEnding)
+		public SimileOutputNumeric(SimileNumericType type)
 		{
-			Text = text;
-			LineEnding = lineEnding;
+			NumericType = type;
+			ValueSet = new List<T>();
+			
 		}
 
+		/// <summary>
+		/// Determines if this element is at the beginning of the
+		/// given string and sends out the remainder of the string
+		/// </summary>
+		/// <param name="line">The line to check</param>
+		/// <param name="remainder">What's left after this element is removed</param>
+		/// <returns>True if this elements starts the line, false otherwise</returns>
+		public override bool AtBeginningOf(string line, out string remainder)
+		{
+			// Go up to the next space or the end (or a single character for characters)
+			int length = line.Length;
+			int space = line.IndexOf(' ');
+			if (NumericType == SimileNumericType.Char)
+			{
+				length = 1;
+			}
+			else if(space != -1)
+			{
+				length = space;
+			}
+
+			// Chop up the string and attempt a parse
+			string valString = line.Substring(0, length);
+			remainder = line.Substring(length);
+			T val = default;
+
+			try
+			{
+				val = (T)Convert.ChangeType(valString, typeof(T));
+			}
+			catch 
+			{
+				remainder = line;
+				return false; 
+			}
+
+			// Successful parse, so verify other options
+			if (Minimum.HasValue && val.CompareTo(Minimum.Value) < 0) return false;
+			if (Maximum.HasValue && val.CompareTo(Maximum.Value) > 0) return false;
+			if (ValueSet != null && ValueSet.Count > 0 && !ValueSet.Contains(val)) return false;
+			// TODO: Handle precision
+
+			// Adjust the remainder and success
+			remainder = line.Substring(length);
+			return true;
+		}
+	}
+
+	/// <summary>
+	/// Represents allowable numeric types for numeric simile elements
+	/// </summary>
+	internal enum SimileNumericType
+	{
+		Byte,
+		SignedByte,
+		Char,
+		Short,
+		UnsignedShort,
+		Int,
+		UnsignedInt,
+		Long,
+		UnsignedLong,
+		Float,
+		Double,
+		Unknown
 	}
 }
