@@ -249,6 +249,9 @@ namespace ConsoleCompare
 				if (pieces.Length != 2)
 					return false;
 
+				// Trim both halves before checking
+				pieces[0] = pieces[0].Trim();
+				pieces[1] = pieces[1].Trim();
 				switch (pieces[0])
 				{
 					case "t":
@@ -268,6 +271,9 @@ namespace ConsoleCompare
 
 					case "v":
 					case "values":
+						// Verify set has { }'s around the values
+						if (!pieces[1].StartsWith("{") || !pieces[1].EndsWith("}"))
+							return false;
 						values = pieces[1].Replace("{","").Replace("}","").Split(',');
 						break;
 
@@ -278,130 +284,69 @@ namespace ConsoleCompare
 				}
 			}
 
-			// Create the numeric type
-			return CreateNumericElement(type, min, max, values, precision, output);
+			// Check the type and create the corresponding numeric element
+			switch (type)
+			{
+				case SimileNumericType.Byte: return CreateNumericElement<byte>(type, min, max, values, precision, output);
+				case SimileNumericType.SignedByte: return CreateNumericElement<sbyte>(type, min, max, values, precision, output);
+				case SimileNumericType.Char: return CreateNumericElement<char>(type, min, max, values, precision, output);
+				case SimileNumericType.Short: return CreateNumericElement<short>(type, min, max, values, precision, output);
+				case SimileNumericType.UnsignedShort: return CreateNumericElement<ushort>(type, min, max, values, precision, output);
+				case SimileNumericType.Int: return CreateNumericElement<int>(type, min, max, values, precision, output);
+				case SimileNumericType.UnsignedInt: return CreateNumericElement<uint>(type, min, max, values, precision, output);
+				case SimileNumericType.Long: return CreateNumericElement<long>(type, min, max, values, precision, output);
+				case SimileNumericType.UnsignedLong: return CreateNumericElement<ulong>(type, min, max, values, precision, output);
+				case SimileNumericType.Float: return CreateNumericElement<float>(type, min, max, values, precision, output);
+				case SimileNumericType.Double: return CreateNumericElement<double>(type, min, max, values, precision, output);
+				case SimileNumericType.Unknown:
+				default:
+					return false;
+			}
 		}
 
-
-		private static bool CreateNumericElement(SimileNumericType type, string min, string max, string[] values, string precision, SimileLineOutput output)
+		/// <summary>
+		/// Creates a numeric element of the specified type from the given strings
+		/// </summary>
+		/// <typeparam name="T">The data type of the numeric element</typeparam>
+		/// <param name="type">The type</param>
+		/// <param name="min">Minimum value, or null for none</param>
+		/// <param name="max">Maximum value, or null for none</param>
+		/// <param name="values">Array of values, or null for none</param>
+		/// <param name="precision">Precision value, or null for none</param>
+		/// <param name="output">The output to add the element to</param>
+		/// <returns>True if all strings are parsed correctly, false otherwise</returns>
+		private static bool CreateNumericElement<T>(SimileNumericType type, string min, string max, string[] values, string precision, SimileLineOutput output)
+			where T : struct, IComparable
 		{
-			// A little sloppy, but this'll make the rest more concise
 			try
 			{
-				switch (type)
-				{
-					case SimileNumericType.Byte:
-						SimileOutputNumeric<byte> b = new SimileOutputNumeric<byte>(type);
-						if (min != null) b.Minimum = byte.Parse(min);
-						if (max != null) b.Maximum = byte.Parse(max);
-						if (values != null) foreach (string v in values) b.ValueSet.Add(byte.Parse(v));
-						if (precision != null) b.Precision = int.Parse(precision);
-						output.AddNumericElement(b);
-						return true;
-
-					case SimileNumericType.SignedByte:
-						SimileOutputNumeric<sbyte> sb = new SimileOutputNumeric<sbyte>(type);
-						if (min != null) sb.Minimum = sbyte.Parse(min);
-						if (max != null) sb.Maximum = sbyte.Parse(max);
-						if (values != null) foreach (string v in values) sb.ValueSet.Add(sbyte.Parse(v));
-						if (precision != null) sb.Precision = int.Parse(precision);
-						output.AddNumericElement(sb);
-						return true;
-
-					case SimileNumericType.Char:
-						SimileOutputNumeric<char> c = new SimileOutputNumeric<char>(type);
-						if (min != null) c.Minimum = char.Parse(min);
-						if (max != null) c.Maximum = char.Parse(max);
-						if (values != null) foreach (string v in values) c.ValueSet.Add(char.Parse(v));
-						if (precision != null) c.Precision = int.Parse(precision);
-						output.AddNumericElement(c);
-						return true;
-
-					case SimileNumericType.Short:
-						SimileOutputNumeric<short> s = new SimileOutputNumeric<short>(type);
-						if (min != null) s.Minimum = short.Parse(min);
-						if (max != null) s.Maximum = short.Parse(max);
-						if (values != null) foreach (string v in values) s.ValueSet.Add(short.Parse(v));
-						if (precision != null) s.Precision = int.Parse(precision);
-						output.AddNumericElement(s);
-						return true;
-
-					case SimileNumericType.UnsignedShort:
-						SimileOutputNumeric<ushort> us = new SimileOutputNumeric<ushort>(type);
-						if (min != null) us.Minimum = ushort.Parse(min);
-						if (max != null) us.Maximum = ushort.Parse(max);
-						if (values != null) foreach (string v in values) us.ValueSet.Add(ushort.Parse(v));
-						if (precision != null) us.Precision = int.Parse(precision);
-						output.AddNumericElement(us);
-						return true;
-
-					case SimileNumericType.Int:
-						SimileOutputNumeric<int> i = new SimileOutputNumeric<int>(type);
-						if (min != null) i.Minimum = int.Parse(min);
-						if (max != null) i.Maximum = int.Parse(max);
-						if (values != null) foreach (string v in values) i.ValueSet.Add(int.Parse(v));
-						if (precision != null) i.Precision = int.Parse(precision);
-						output.AddNumericElement(i);
-						return true;
-
-					case SimileNumericType.UnsignedInt:
-						SimileOutputNumeric<uint> ui = new SimileOutputNumeric<uint>(type);
-						if (min != null) ui.Minimum = uint.Parse(min);
-						if (max != null) ui.Maximum = uint.Parse(max);
-						if (values != null) foreach (string v in values) ui.ValueSet.Add(uint.Parse(v));
-						if (precision != null) ui.Precision = int.Parse(precision);
-						output.AddNumericElement(ui);
-						return true;
-
-					case SimileNumericType.Long:
-						SimileOutputNumeric<long> l = new SimileOutputNumeric<long>(type);
-						if (min != null) l.Minimum = long.Parse(min);
-						if (max != null) l.Maximum = long.Parse(max);
-						if (values != null) foreach (string v in values) l.ValueSet.Add(long.Parse(v));
-						if (precision != null) l.Precision = int.Parse(precision);
-						output.AddNumericElement(l);
-						return true;
-
-					case SimileNumericType.UnsignedLong:
-						SimileOutputNumeric<ulong> ul = new SimileOutputNumeric<ulong>(type);
-						if (min != null) ul.Minimum = ulong.Parse(min);
-						if (max != null) ul.Maximum = ulong.Parse(max);
-						if (values != null) foreach (string v in values) ul.ValueSet.Add(ulong.Parse(v));
-						if (precision != null) ul.Precision = int.Parse(precision);
-						output.AddNumericElement(ul);
-						return true;
-
-					case SimileNumericType.Float:
-						SimileOutputNumeric<float> f = new SimileOutputNumeric<float>(type);
-						if (min != null) f.Minimum = float.Parse(min);
-						if (max != null) f.Maximum = float.Parse(max);
-						if (values != null) foreach (string v in values) f.ValueSet.Add(float.Parse(v));
-						if (precision != null) f.Precision = int.Parse(precision);
-						output.AddNumericElement(f);
-						return true;
-
-					case SimileNumericType.Double:
-						SimileOutputNumeric<double> d = new SimileOutputNumeric<double>(type);
-						if (min != null) d.Minimum = double.Parse(min);
-						if (max != null) d.Maximum = double.Parse(max);
-						if (values != null) foreach (string v in values) d.ValueSet.Add(double.Parse(v));
-						if (precision != null) d.Precision = int.Parse(precision);
-						output.AddNumericElement(d);
-						return true;
-
-
-					// Invalid type!
-					case SimileNumericType.Unknown:
-					default:
-						return false;
-				}
+				SimileOutputNumeric<T> num = new SimileOutputNumeric<T>(type);
+				if (min != null) num.Minimum = (T)Convert.ChangeType(min, typeof(T));
+				if (max != null) num.Maximum = (T)Convert.ChangeType(max, typeof(T));
+				if (values != null) foreach (string v in values) num.ValueSet.Add((T)Convert.ChangeType(v.Trim(), typeof(T)));
+				if (precision != null) num.Precision = int.Parse(precision);
+				output.AddNumericElement(num);
+				return true;
 			}
-			catch // Any problems --> return false
+			catch 
 			{
-				return false;
+				// One of the casts failed
+				return false; 
 			}
 		}
 
+
+		/// <summary>
+		/// Parses a numeric type from the given string.  The following are valid type strings:
+		/// 
+		/// b, byte, sb, sbyte
+		/// us, ushort, ui, uint, ul, ulong
+		/// s, short, i, int, l, long
+		/// f, float, d, double
+		/// c, char
+		/// </summary>
+		/// <param name="type">The type as a string</param>
+		/// <returns>The numeric type.  If the parse fails, Unknown is returned</returns>
 		private static SimileNumericType ParseType(string type)
 		{
 			// Verify we have a string
