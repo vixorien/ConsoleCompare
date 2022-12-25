@@ -40,11 +40,6 @@ namespace ConsoleCompare
 		/// </summary>
 		private ConsoleSimile currentSimile;
 
-		/// <summary>
-		/// The file that corresponds to the current simile
-		/// </summary>
-		private string currentSimileFile;
-
 
 		/// <summary>
 		/// Gets or sets the state of the capture button
@@ -107,7 +102,6 @@ namespace ConsoleCompare
 
 			// No simile yet, so no capture yet
 			currentSimile = null;
-			currentSimileFile = null;
 			CaptureButtonEnabled = false;
 			StopButtonEnabled = false;
 			OpenButtonEnabled = true;
@@ -131,17 +125,19 @@ namespace ConsoleCompare
 			{
 				// Parse and check
 				currentSimile = SimileParser.ParseFromFile(open.FileName);
-				currentSimileFile = currentSimile == null ? null : Path.GetFileName(open.FileName);
+				string filename = Path.GetFileName(open.FileName);
 
 				// Update window based on results
 				if (currentSimile == null)
 				{
-					windowControl.TextSimileFileName.Text = "No file loaded";
+					// Error loading!
+					MessageBox.Show($"Simile file '{filename}' is invalid. Please choose another.", "Error Parsing File", MessageBoxButton.OK, MessageBoxImage.Error);
+					windowControl.TextSimileFileName.Text = "Load Simile File";
 					CaptureButtonEnabled = false;
 				}
 				else
 				{
-					windowControl.TextSimileFileName.Text = currentSimileFile;
+					windowControl.TextSimileFileName.Text = filename;
 					CaptureButtonEnabled = true;
 				}
 			}
@@ -159,17 +155,6 @@ namespace ConsoleCompare
 				return;
 
 			capture.BeginCapture(currentSimile);
-
-			//// Just testing...
-			//ConsoleSimile check = new ConsoleSimile();
-			//check.AddOutput("Hello, World!");
-			//for (int i = 0; i < 10; i++)
-			//	check.AddOutput(i.ToString());
-			//check.AddOutput("Enter your name: ", LineEndingType.SameLine);
-			//check.AddInput("Chris");
-			//check.AddOutput("Your name is Chris");
-
-			//capture.BeginCapture(check);
 		}
 
 		/// <summary>
