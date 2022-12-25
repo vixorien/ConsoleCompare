@@ -118,8 +118,13 @@
 				   Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"
 				   Foreground="{DynamicResource {x:Static vsshell:VsBrushes.StatusBarTextKey}}">
 			<StatusBarItem>
+				<imaging:CrispImage Name="StatusIcon" Moniker="{x:Static catalog:KnownMonikers.StatusOK}"/>
+			</StatusBarItem>
+			
+			<StatusBarItem>
 				<TextBlock Name="LabelStatus" Text="Status:"/>
 			</StatusBarItem>
+			
 			<StatusBarItem>
 				<TextBlock Name="TextStatus" Text="Loading..."/>
 			</StatusBarItem>
