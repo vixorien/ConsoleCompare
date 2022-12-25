@@ -19,6 +19,10 @@ namespace ConsoleCompare
 		{
 			this.window = window;
 			this.InitializeComponent();
+
+			// Set up widths of rich text boxes
+			this.ExpectedOutput.Document.PageWidth = 1000;
+			this.ProgramOutput.Document.PageWidth = 1000;
 		}
 
 		/// <summary>

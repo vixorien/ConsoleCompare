@@ -189,8 +189,10 @@ namespace ConsoleCompare
 							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 							// Add the text to both boxes
-							window.AddTextOutput(actual, color, BackgroundColor, OutputFontStyle, OutputFontWeight, append);
-							window.AddTextExpected(expectedReport, ExpectedOutputColor, BackgroundColor, OutputFontStyle, OutputFontWeight, append);
+							ResultsWindow.MatchIcon matchColor = match ? ResultsWindow.MatchIcon.Success : ResultsWindow.MatchIcon.Fail;
+							ResultsWindow.MatchIcon matchNoColor = match ? ResultsWindow.MatchIcon.SuccessNoColor : ResultsWindow.MatchIcon.FailNoColor;
+							window.AddTextOutput(actual, color, BackgroundColor, OutputFontStyle, OutputFontWeight, append, matchColor);
+							window.AddTextExpected(expectedReport, ExpectedOutputColor, BackgroundColor, OutputFontStyle, OutputFontWeight, append, matchNoColor);
 						});
 
 						// Save the previous ending
@@ -216,8 +218,8 @@ namespace ConsoleCompare
 							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 							// Add the text to both boxes
-							window.AddTextOutput(input.Text, foreOutput, backOutput, InputFontStyle, InputFontWeight, append);
-							window.AddTextExpected(input.Text, foreExpected, backExpected, InputFontStyle, InputFontWeight, append);
+							window.AddTextOutput(input.Text, foreOutput, backOutput, InputFontStyle, InputFontWeight, append, ResultsWindow.MatchIcon.Success);
+							window.AddTextExpected(input.Text, foreExpected, backExpected, InputFontStyle, InputFontWeight, append, ResultsWindow.MatchIcon.SuccessNoColor);
 						});
 
 						// Previous line ending is now a new line since we're simulating the user pressing enter

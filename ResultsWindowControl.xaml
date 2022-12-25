@@ -58,10 +58,25 @@
 				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Stop}"/>
 			</Button>
 
+			<Button
+				Name="ButtonLoadSimile"
+				Click="ButtonLoadSimile_Click"
+				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
+				MinWidth="5"
+				Margin="20,0,0,0"
+				ToolTip="Open Simile File">
+				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.OpenTopic}"/>
+			</Button>
+			<!--
+				Link for image service / catalog:
+				https://learn.microsoft.com/en-us/visualstudio/extensibility/image-service-and-catalog?view=vs-2022
+				Download images: https://www.microsoft.com/en-us/download/details.aspx?id=35825
+			-->
+
 			<TextBlock 
-				Text="Comparison File: " 
+				Text="Simile File: " 
 				VerticalAlignment="Center" 
-				Margin="20,0,0,0"/>
+				Margin="5,0,0,0"/>
 
 			<TextBlock 
 				Name="TextSimileFileName"
@@ -72,23 +87,7 @@
 				Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"/>
 
 			
-			<Button
-				Name="ButtonLoadSimile"
-				Click="ButtonLoadSimile_Click"
-				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
-				MinWidth="5"
-				MinHeight="5"
-				Height="20"
-				Margin="10,0,0,0"
-				ToolTip="Open Comparison File">
-
-				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.OpenFile}"/>
-
-			</Button>
-			<!--
-				Link for image service / catalog:
-				https://learn.microsoft.com/en-us/visualstudio/extensibility/image-service-and-catalog?view=vs-2022
-			-->
+			
 
 		</StackPanel>
 

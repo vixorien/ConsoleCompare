@@ -200,17 +200,25 @@ namespace ConsoleCompare
 			windowControl.ExpectedOutput.Document.Blocks.Clear();
 		}
 
+		public enum MatchIcon
+		{
+			Success,
+			SuccessNoColor,
+			Fail,
+			FailNoColor,
+			None
+		}
 
-		public void AddTextOutput(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine)
-			=> AddText(text, color, backColor, style, weight, appendToPreviousLine, windowControl.ProgramOutput);
+		public void AddTextOutput(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine, MatchIcon match = MatchIcon.None)
+			=> AddText(text, color, backColor, style, weight, appendToPreviousLine, windowControl.ProgramOutput, match);
 
-		public void AddTextExpected(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine)
-			=> AddText(text, color, backColor, style, weight, appendToPreviousLine, windowControl.ExpectedOutput);
+		public void AddTextExpected(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine, MatchIcon match = MatchIcon.None)
+			=> AddText(text, color, backColor, style, weight, appendToPreviousLine, windowControl.ExpectedOutput, match);
 
 		/// <summary>
 		/// Private helper for adding colored text to a particular text box
 		/// </summary>
-		private void AddText(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine, RichTextBox textBox)
+		private void AddText(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine, RichTextBox textBox, MatchIcon match)
 		{
 			// Set up a text run with proper color
 			Run run = new Run(text) { Foreground = color, Background = backColor, FontStyle = style, FontWeight = weight };
@@ -226,6 +234,23 @@ namespace ConsoleCompare
 			{
 				// Not appending, or there is nothing to append to
 				Paragraph newPara = new Paragraph() { Margin = new Thickness(0) };
+
+				// Do we need to toss a match icon at the front of the line?
+				if (match != MatchIcon.None)
+				{
+					CrispImage ci = new CrispImage();
+					switch (match)
+					{
+						case MatchIcon.Success: ci.Moniker = KnownMonikers.StatusOK; break;
+						case MatchIcon.SuccessNoColor: ci.Moniker = KnownMonikers.StatusOKNoColor; break;
+						case MatchIcon.Fail: ci.Moniker = KnownMonikers.StatusError; break;
+						case MatchIcon.FailNoColor: ci.Moniker = KnownMonikers.StatusErrorNoColor; break;
+					}
+					newPara.Inlines.Add(ci);
+
+					// Add a space to the run, too
+					run.Text = " " + run.Text;
+				}
 
 				// Add the run to the paragraph, then add the paragraph to the output
 				newPara.Inlines.Add(run);
