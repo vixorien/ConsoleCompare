@@ -328,11 +328,18 @@ namespace ConsoleCompare
 				return false; 
 			}
 
-			// Successful parse, so verify other options
+			// Successful parse, so verify other options starting with precision (which will cascade to the others)
+			if (Precision.HasValue && (NumericType == SimileNumericType.Float || NumericType == SimileNumericType.Double))
+			{
+				// Process both floats and doubles the same (since the Math class is all doubles)
+				double dVal = Convert.ToDouble(val);
+				val = (T)Convert.ChangeType(Math.Round(dVal, Precision.Value), typeof(T));
+			}
+
+			// Other options
 			if (Minimum.HasValue && val.CompareTo(Minimum.Value) < 0) return false;
 			if (Maximum.HasValue && val.CompareTo(Maximum.Value) > 0) return false;
 			if (ValueSet != null && ValueSet.Count > 0 && !ValueSet.Contains(val)) return false;
-			// TODO: Handle precision
 
 			// Adjust the remainder and success
 			remainder = line.Substring(length);
