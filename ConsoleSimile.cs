@@ -13,22 +13,7 @@ namespace ConsoleCompare
 	/// </summary>
 	internal class ConsoleSimile
 	{
-		// Overall requirements:
-		// - Multiples lines (probably just a List of them in order)
-		// - Each line could be input or output (abstract classes for each?)
-		// - A line can have multiple "pieces", or elements, like:
-		//   - A span of regular text
-		//   - A "variable" that might change based on prior input/output
-		//   - A number that needs to be parsed (for validity?)
-		//   - A number within a specified range
-		//   - An element from a specific set
-		// - Input lines...
-		//   - A single string
-		//   - A number in a range?
-		//   - A "variable" that might change?
-		//   - An element from a specific set?
-		// - Maybe be able to "step through" like an iterator?
-
+		// Simple list of all lines in order
 		private List<SimileLine> allLines;
 
 		/// <summary>
@@ -62,7 +47,10 @@ namespace ConsoleCompare
 			allLines.Add(output);
 		}
 
-		
+		/// <summary>
+		/// Adds the given output line to the simile
+		/// </summary>
+		/// <param name="output">Output line object to add</param>
 		public void AddOutput(SimileLineOutput output)
 		{
 			allLines.Add(output);
@@ -115,9 +103,7 @@ namespace ConsoleCompare
 	/// <summary>
 	/// Base class for lines of IO
 	/// </summary>
-	internal abstract class SimileLine
-	{
-	}
+	internal abstract class SimileLine { }
 
 	/// <summary>
 	/// Simple line of input
@@ -148,7 +134,11 @@ namespace ConsoleCompare
 		/// </summary>
 		public string RawText { get; }
 
-
+		/// <summary>
+		/// Creates a line of output for the simile
+		/// </summary>
+		/// <param name="rawText">The raw text of the line</param>
+		/// <param name="lineEnding">The type of line ending</param>
 		public SimileLineOutput(string rawText, LineEndingType lineEnding)
 		{
 			LineEnding = lineEnding;
@@ -285,11 +275,14 @@ namespace ConsoleCompare
 		public List<T> ValueSet { get; }
 		public int? Precision { get; set; }
 
+		/// <summary>
+		/// Creates a numeric output element
+		/// </summary>
+		/// <param name="type">The data type of this element</param>
 		public SimileOutputNumeric(SimileNumericType type)
 		{
 			NumericType = type;
 			ValueSet = new List<T>();
-			
 		}
 
 		/// <summary>

@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Linq.Expressions;
+using System.CodeDom;
 
 namespace ConsoleCompare
 {
@@ -48,6 +49,7 @@ namespace ConsoleCompare
 	/// #
 	/// # - precision (optional)
 	/// #   - Acceptable precision bounds (mostly for floating point rounding errors)
+	/// #   - Must be an integer between 0-15 (inclusive)
 	/// #   - Rounds the results to the given precision for checking
 	/// #   - examples: [[precision=3]] or [[p=5]]
 	/// 
@@ -67,9 +69,17 @@ namespace ConsoleCompare
 	/// </example>
 	internal static class SimileParser
 	{
+		// Parsing details
+		private const char PrefaceOutputWithNewLine = '.';
+		private const char PrefaceOutputWithoutNewLine = ';';
+		private const char PrefaceInput = '>';
+		private const char PrefaceComment = '#';
 		private const string ElementTagStart = "[[";
 		private const string ElementTagEnd = "]]";
-		private const char ElementOptionDelimeter = ';';
+		private const string ElementOptionDelimeter = ";";
+		private const string ElementOptionEquals = "=";
+		private const string ElementValueSetStart = "{";
+		private const string ElementValueSetEnd = "}";
 
 
 		/// <summary>
@@ -90,17 +100,23 @@ namespace ConsoleCompare
 		/// <returns>A new ConsoleSimile object containing the simile</returns>
 		public static ConsoleSimile Parse(string[] lines)
 		{
-			if (lines == null || lines.Length == 0)
-				return null;
+			if (lines == null)
+				throw new ArgumentNullException("lines", "Array of lines to parse was null");
+
+			if (lines.Length == 0)
+				throw new SimileParseException("No lines to parse; was the file empty?");
 
 			// Loop through lines and process each
 			ConsoleSimile result = new ConsoleSimile();
+			int lineNumber = 1;
 			foreach (string line in lines)
 			{
-				bool success = ParseLine(line, result);
-				if (!success)
-					return null;
-				// Maybe throw exception?
+				// If the parse fails, throw an exception to pass failure details up
+				// - TODO: Capture more details on the failure reason
+				if (!ParseLine(line, result))
+					throw new SimileParseException("Error parsing line " + lineNumber, line, lineNumber);
+
+				lineNumber++;
 			}
 
 			return result;
@@ -122,7 +138,7 @@ namespace ConsoleCompare
 			switch (line[0])
 			{
 				// Simple parsing for now
-				case '.':
+				case PrefaceOutputWithNewLine:
 					{
 						// Remove the first character
 						line = line.Substring(1);
@@ -137,7 +153,7 @@ namespace ConsoleCompare
 						break;
 					}
 
-				case ';':
+				case PrefaceOutputWithoutNewLine:
 					{
 						// Remove the first character
 						line = line.Substring(1);
@@ -153,10 +169,10 @@ namespace ConsoleCompare
 					}
 
 				// Input is very basic at the moment
-				case '>': simile.AddInput(line.Substring(1)); break;
+				case PrefaceInput: simile.AddInput(line.Substring(1)); break;
 
 				// Comments: Simply ignore, but here if we want to do something
-				case '#': break;
+				case PrefaceComment: break;
 
 				// Any other character results in an invalid parse
 				default: return false;
@@ -229,11 +245,17 @@ namespace ConsoleCompare
 			return ParseOutputElements(remainder, output);
 		}
 
-		
+		/// <summary>
+		/// Parses the contents of a numeric tag from an output line.  This assumes the start and end 
+		/// characters [[ ]]'s have already been stripped away.
+		/// </summary>
+		/// <param name="tag">The tag from the string</param>
+		/// <param name="output">The output to add the numeric element to</param>
+		/// <returns>True if the tag is parsed successfully, false otherwise</returns>
 		private static bool ParseNumericTag(string tag, SimileLineOutput output)
 		{
 			// Split into options
-			string[] allOptions = tag.Split(ElementOptionDelimeter);
+			string[] allOptions = tag.Split(new string[]{ ElementOptionDelimeter}, StringSplitOptions.RemoveEmptyEntries);
 
 			// Process each option
 			SimileNumericType type = SimileNumericType.Unknown;
@@ -245,7 +267,7 @@ namespace ConsoleCompare
 			foreach (string op in allOptions)
 			{
 				// Split across the equals and check
-				string[] pieces = op.Split('=');
+				string[] pieces = op.Split(new string[] { ElementOptionEquals }, StringSplitOptions.RemoveEmptyEntries);
 				if (pieces.Length != 2)
 					return false;
 
@@ -272,15 +294,23 @@ namespace ConsoleCompare
 					case "v":
 					case "values":
 						// Verify set has { }'s around the values
-						if (!pieces[1].StartsWith("{") || !pieces[1].EndsWith("}"))
+						if (!pieces[1].StartsWith(ElementValueSetStart) || 
+							!pieces[1].EndsWith(ElementValueSetEnd))
 							return false;
-						values = pieces[1].Replace("{","").Replace("}","").Split(',');
+
+						// Strip the start and end pieces, then split
+						pieces[1] = pieces[1].Substring(ElementValueSetStart.Length, pieces[1].Length - ElementValueSetStart.Length - ElementValueSetEnd.Length);
+						values = pieces[1].Split(',');
 						break;
 
 					case "p":
 					case "precision":
 						precision = pieces[1];
 						break;
+
+					// Unknown option
+					default:
+						return false;
 				}
 			}
 
@@ -298,6 +328,8 @@ namespace ConsoleCompare
 				case SimileNumericType.UnsignedLong: return CreateNumericElement<ulong>(type, min, max, values, precision, output);
 				case SimileNumericType.Float: return CreateNumericElement<float>(type, min, max, values, precision, output);
 				case SimileNumericType.Double: return CreateNumericElement<double>(type, min, max, values, precision, output);
+				
+				// Invalid type found
 				case SimileNumericType.Unknown:
 				default:
 					return false;
@@ -324,13 +356,22 @@ namespace ConsoleCompare
 				if (min != null) num.Minimum = (T)Convert.ChangeType(min, typeof(T));
 				if (max != null) num.Maximum = (T)Convert.ChangeType(max, typeof(T));
 				if (values != null) foreach (string v in values) num.ValueSet.Add((T)Convert.ChangeType(v.Trim(), typeof(T)));
-				if (precision != null) num.Precision = int.Parse(precision);
+				if (precision != null)
+				{
+					num.Precision = int.Parse(precision);
+
+					// Precision is limited to what Math.Round() accepts
+					if (num.Precision < 0 || num.Precision > 15)
+						return false;
+				}
+
+				// Add the element to the output line
 				output.AddNumericElement(num);
 				return true;
 			}
 			catch 
 			{
-				// One of the casts failed
+				// One of the casts failed, so the numeric element is invalid
 				return false; 
 			}
 		}
@@ -369,6 +410,35 @@ namespace ConsoleCompare
 				case "c": case "char": return SimileNumericType.Char;
 				default: return SimileNumericType.Unknown;
 			}
+		}
+	}
+
+	/// <summary>
+	/// Represents a problem during a simile parse
+	/// </summary>
+	public class SimileParseException : Exception
+	{
+		/// <summary>
+		/// Gets the number of the line on which the error occured
+		/// </summary>
+		public int LineNumber { get; }
+
+		/// <summary>
+		/// Gets the line of text that caused the error
+		/// </summary>
+		public string LineText { get; }
+
+		/// <summary>
+		/// Creates an exception object to represent an error during a simile parse
+		/// </summary>
+		/// <param name="message">The overall error message</param>
+		/// <param name="line">The line from the simile that caused the error</param>
+		/// <param name="lineNumber">The number of the line that caused the error</param>
+		public SimileParseException(string message, string lineText = null, int lineNumber = -1)
+			: base(message)
+		{
+			LineText = lineText;
+			LineNumber = lineNumber;
 		}
 	}
 }

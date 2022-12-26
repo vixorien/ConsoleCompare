@@ -8,9 +8,19 @@ using System.Windows.Controls;
 using Microsoft.Win32;
 using System.IO;
 using Microsoft.VisualStudio.Imaging;
+using Microsoft.VisualStudio.Imaging.Interop;
 
 namespace ConsoleCompare
 {
+	/// <summary>
+	/// The IO type of text for the results window
+	/// </summary>
+	public enum ResultsTextType
+	{
+		Output,
+		Input
+	}
+
 	/// <summary>
 	/// This class implements the tool window exposed by this package and hosts a user control.
 	/// </summary>
@@ -25,6 +35,21 @@ namespace ConsoleCompare
 	[Guid("3671dfb2-140b-4c50-b9ec-9891d8eb6002")]
 	public class ResultsWindow : ToolWindowPane
 	{
+		// Output details
+		private static ImageMoniker ComparisonOutputMatchIcon = KnownMonikers.StatusOK;
+		private static ImageMoniker ComparisonOutputMismatchIcon = KnownMonikers.StatusError;
+		private static ImageMoniker ComparisonExpectedMatchIcon = KnownMonikers.StatusOKNoColor;
+		private static ImageMoniker ComparisonExpectedMismatchIcon = KnownMonikers.StatusErrorOutline;
+		private static SolidColorBrush BackgroundColor = Brushes.Black;
+		private static SolidColorBrush ExpectedOutputColor = Brushes.White;
+		private static SolidColorBrush MatchingOutputColor = Brushes.Green;
+		private static SolidColorBrush NonmatchingOutputColor = Brushes.OrangeRed;
+		private static FontStyle OutputFontStyle = FontStyles.Normal;
+		private static FontStyle InputFontStyle = FontStyles.Italic;
+		private static FontWeight OutputFontWeight = FontWeights.Normal;
+		private static FontWeight InputFontWeight = FontWeights.Bold;
+		private static bool InvertInputColors = false;
+
 		/// <summary>
 		/// The capture manager for running and interacting with the compiled app
 		/// </summary>
@@ -123,15 +148,41 @@ namespace ConsoleCompare
 			bool? result = open.ShowDialog();
 			if (result.HasValue && result.Value == true)
 			{
-				// Parse and check
-				currentSimile = SimileParser.ParseFromFile(open.FileName);
+				// Parse and check the results
 				string filename = Path.GetFileName(open.FileName);
+
+				try
+				{
+					currentSimile = null; // Reset first
+					currentSimile = SimileParser.ParseFromFile(open.FileName);
+				}
+				catch (SimileParseException e)
+				{
+					// Create a detailed error message including the line that failed
+					string errorMessage = 
+						$"Parse of '{filename}' failed\n\n" +
+						e.Message + "\n\n" +
+						$"Line in question:\n'{e.LineText}'";
+
+					MessageBox.Show(
+						errorMessage,
+						"Error Parsing File",
+						MessageBoxButton.OK,
+						MessageBoxImage.Error);
+				}
+				catch (Exception e)
+				{
+					// Other misc error with the file
+					MessageBox.Show(
+						$"Error opening file '{filename}': {e.Message}",
+						"Error Opening File",
+						MessageBoxButton.OK,
+						MessageBoxImage.Error);
+				}
 
 				// Update window based on results
 				if (currentSimile == null)
 				{
-					// Error loading!
-					MessageBox.Show($"Simile file '{filename}' is invalid. Please choose another.", "Error Parsing File", MessageBoxButton.OK, MessageBoxImage.Error);
 					windowControl.TextSimileFileName.Text = "Load Simile File";
 					CaptureButtonEnabled = false;
 				}
@@ -185,25 +236,120 @@ namespace ConsoleCompare
 			windowControl.ExpectedOutput.Document.Blocks.Clear();
 		}
 
-		public enum MatchIcon
+		/// <summary>
+		/// Adds text to the program output text box
+		/// </summary>
+		/// <param name="text">The text to add</param>
+		/// <param name="textType">The type of text, either input or output</param>
+		/// <param name="appendToPreviousLine">Is this appended to the previous line?</param>
+		/// <param name="match">Is this text considered a match?</param>
+		public void AddTextOutput(string text, ResultsTextType textType, bool appendToPreviousLine, bool match)
 		{
-			Success,
-			SuccessNoColor,
-			Fail,
-			FailNoColor,
-			None
+			// Display options for adding text
+			ImageMoniker icon = match ? ComparisonOutputMatchIcon : ComparisonOutputMismatchIcon;
+			SolidColorBrush backColor;
+			SolidColorBrush foreColor;
+			FontStyle style;
+			FontWeight weight;
+
+			// Check the line type
+			switch (textType)
+			{
+				default:
+				case ResultsTextType.Output:
+
+					// Static background color, foreground depends on match
+					backColor = BackgroundColor;
+					foreColor = match ? MatchingOutputColor : NonmatchingOutputColor;
+					style = OutputFontStyle;
+					weight = OutputFontWeight;
+					break;
+
+				case ResultsTextType.Input:
+
+					// Depends only on inversion option, as we always assume input matches
+					backColor = InvertInputColors ? MatchingOutputColor : BackgroundColor;
+					foreColor = InvertInputColors ? BackgroundColor : MatchingOutputColor;
+					style = InputFontStyle;
+					weight = InputFontWeight;
+					break;
+			}
+
+			// Pass final values to the helper
+			AddText(
+				text, 
+				foreColor, 
+				backColor, 
+				style, 
+				weight, 
+				appendToPreviousLine, 
+				windowControl.ProgramOutput, 
+				icon);
 		}
 
-		public void AddTextOutput(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine, MatchIcon match = MatchIcon.None)
-			=> AddText(text, color, backColor, style, weight, appendToPreviousLine, windowControl.ProgramOutput, match);
+		/// <summary>
+		/// Adds text to the expected output text box
+		/// </summary>
+		/// <param name="text">The text to add</param>
+		/// <param name="textType">The type of text, either input or output</param>
+		/// <param name="appendToPreviousLine">Is this appended to the previous line?</param>
+		/// <param name="match">Is this text considered a match?</param>
+		public void AddTextExpected(string text, ResultsTextType textType, bool appendToPreviousLine, bool match)
+		{
+			// Display options for adding text
+			ImageMoniker icon = match ? ComparisonExpectedMatchIcon : ComparisonExpectedMismatchIcon;
+			SolidColorBrush backColor;
+			SolidColorBrush foreColor;
+			FontStyle style;
+			FontWeight weight;
 
-		public void AddTextExpected(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine, MatchIcon match = MatchIcon.None)
-			=> AddText(text, color, backColor, style, weight, appendToPreviousLine, windowControl.ExpectedOutput, match);
+			// Check the line type
+			switch (textType)
+			{
+				default:
+				case ResultsTextType.Output:
+
+					// Static background color, foreground depends on match
+					backColor = BackgroundColor;
+					foreColor = ExpectedOutputColor;
+					style = OutputFontStyle;
+					weight = OutputFontWeight;
+					break;
+
+				case ResultsTextType.Input:
+
+					// Depends only on inversion option, as we always assume input matches
+					backColor = InvertInputColors ? ExpectedOutputColor : BackgroundColor;
+					foreColor = InvertInputColors ? BackgroundColor : ExpectedOutputColor;
+					style = InputFontStyle;
+					weight = InputFontWeight;
+					break;
+			}
+
+			// Pass final values to the helper
+			AddText(
+				text, 
+				foreColor, 
+				backColor, 
+				style, 
+				weight, 
+				appendToPreviousLine, 
+				windowControl.ExpectedOutput, 
+				icon);
+		}
 
 		/// <summary>
 		/// Private helper for adding colored text to a particular text box
 		/// </summary>
-		private void AddText(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine, RichTextBox textBox, MatchIcon match)
+		/// <param name="text">The text to add</param>
+		/// <param name="color">The color of the text</param>
+		/// <param name="backColor">The background color of the text</param>
+		/// <param name="style">The font style (italics)</param>
+		/// <param name="weight">The font weight (bold)</param>
+		/// <param name="appendToPreviousLine">Is this appended to the previous line?</param>
+		/// <param name="textBox">The text box to place the text in</param>
+		/// <param name="icon">The icon to prepend to the line, if any</param>
+		private void AddText(string text, SolidColorBrush color, SolidColorBrush backColor, FontStyle style, FontWeight weight, bool appendToPreviousLine, RichTextBox textBox, ImageMoniker? icon)
 		{
 			// Set up a text run with proper color
 			Run run = new Run(text) { Foreground = color, Background = backColor, FontStyle = style, FontWeight = weight };
@@ -221,16 +367,11 @@ namespace ConsoleCompare
 				Paragraph newPara = new Paragraph() { Margin = new Thickness(0) };
 
 				// Do we need to toss a match icon at the front of the line?
-				if (match != MatchIcon.None)
+				if (icon.HasValue)
 				{
+					// Create the image and add to the paragraph
 					CrispImage ci = new CrispImage();
-					switch (match)
-					{
-						case MatchIcon.Success: ci.Moniker = KnownMonikers.StatusOK; break;
-						case MatchIcon.SuccessNoColor: ci.Moniker = KnownMonikers.StatusOKNoColor; break;
-						case MatchIcon.Fail: ci.Moniker = KnownMonikers.StatusError; break;
-						case MatchIcon.FailNoColor: ci.Moniker = KnownMonikers.StatusErrorNoColor; break;
-					}
+					ci.Moniker = icon.Value;
 					newPara.Inlines.Add(ci);
 
 					// Add a space to the run, too
