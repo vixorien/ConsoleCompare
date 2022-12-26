@@ -71,6 +71,8 @@ namespace ConsoleCompare
 		/// <param name="e"></param>
 		private void ButtonComments_Click(object sender, RoutedEventArgs e)
 		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
 			// Run the comment check and report results back to this window control
 			CommentChecker.ScanForComments(this);
 		}
