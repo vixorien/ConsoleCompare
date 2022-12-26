@@ -1,10 +1,13 @@
 ﻿using EnvDTE;
+using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ConsoleCompare
 {
@@ -13,6 +16,9 @@ namespace ConsoleCompare
 	/// </summary>
 	internal class CommentCheckResults
 	{
+		/// <summary>
+		/// Gets or sets the total number of projects
+		/// </summary>
 		public int ProjectCount { get; set; }
 		
 		public int ClassCount { get; set; }
@@ -28,22 +34,54 @@ namespace ConsoleCompare
 		public int PropertyRegularCommentCount { get; set; }
 
 
+		/// <summary>
+		/// Gets the total number of classes, methods and properties
+		/// </summary>
 		public int ExpectedXMLCommentTotal => 
 			ClassCount + 
 			MethodCount + 
 			PropertyCount;
-		
+
+		/// <summary>
+		/// Gets the total number of XML comments on classes, methods and properties
+		/// </summary>
 		public int XMLCommentTotal => 
 			ClassXMLCommentCount + 
 			MethodXMLCommentCount +
 			PropertyXMLCommentCount;
 		
+		/// <summary>
+		/// Gets the total number of regular (non-XML) comments on classes, methods and properties
+		/// </summary>
 		public int RegularCommentTotal =>
 			ClassRegularCommentCount +
 			MethodRegularCommentCount +
 			PropertyRegularCommentCount;
 
+		/// <summary>
+		/// Gets whether or not all classes, methods and properties have XML comments
+		/// </summary>
+		public bool AllXMLComments =>
+			ClassCount == ClassXMLCommentCount &&
+			MethodCount == MethodXMLCommentCount &&
+			PropertyCount == PropertyXMLCommentCount;
 
+		/// <summary>
+		/// Returns a string detailing the count of XML comments on classes, methods and properties
+		/// </summary>
+		/// <returns>A string with XML comment count details</returns>
+		public override string ToString()
+		{
+			string results = $"Classes: {ClassXMLCommentCount}/{ClassCount}  Methods: {MethodXMLCommentCount}/{MethodCount}  Properties: {PropertyXMLCommentCount}/{PropertyCount}";
+
+			// Any regular comments that should be XML?
+			if (RegularCommentTotal > 0)
+			{
+				// TODO: Add info about regular comments here
+			}
+
+			return results;
+		}
 	}
 
 	/// <summary>
@@ -55,11 +93,14 @@ namespace ConsoleCompare
 		/// Scans the current solution for code elements and the
 		/// status of their comments (XML, regular or none)
 		/// </summary>
-		/// <param name="dte">DTE object</param>
+		/// <param name="windowControl">The window control for reporting results, if any</param>
 		/// <returns>Object containing info on code elements and comment counts</returns>
-		public static CommentCheckResults ScanForComments(DTE dte)
+		public static CommentCheckResults ScanForComments(ResultsWindowControl windowControl)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+
+			// Grab the global DTE
+			DTE dte = Package.GetGlobalService(typeof(DTE)) as DTE;
 
 			// Create the overall result object
 			CommentCheckResults results = new CommentCheckResults();
@@ -83,6 +124,14 @@ namespace ConsoleCompare
 						WalkCodeTree(element, results);
 					}
 				}
+			}
+
+			// Are we reporting results?
+			if (windowControl != null)
+			{
+				windowControl.TextComments.Text = results.ToString();
+				windowControl.CommentIcon.Moniker =
+					results.AllXMLComments ? KnownMonikers.StatusOK : KnownMonikers.Uncomment;
 			}
 
 			return results;

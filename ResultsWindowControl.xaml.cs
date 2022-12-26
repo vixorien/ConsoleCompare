@@ -63,5 +63,17 @@ namespace ConsoleCompare
 			toSync.ScrollToVerticalOffset(e.VerticalOffset);
 			toSync.ScrollToHorizontalOffset(e.HorizontalOffset);
 		}
-    }
+
+		/// <summary>
+		/// Runs the comment check
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void ButtonComments_Click(object sender, RoutedEventArgs e)
+		{
+			// Run the comment check and report results back to this window control
+			CommentChecker.ScanForComments(this);
+		}
+
+	}
 }

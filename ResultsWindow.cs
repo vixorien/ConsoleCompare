@@ -9,6 +9,7 @@ using Microsoft.Win32;
 using System.IO;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
+using EnvDTE;
 
 namespace ConsoleCompare
 {
@@ -36,14 +37,15 @@ namespace ConsoleCompare
 	public class ResultsWindow : ToolWindowPane
 	{
 		// Output details
+		// Color references: https://learn.microsoft.com/en-us/dotnet/media/art-color-table.png
 		private static ImageMoniker ComparisonOutputMatchIcon = KnownMonikers.StatusOK;
 		private static ImageMoniker ComparisonOutputMismatchIcon = KnownMonikers.StatusError;
 		private static ImageMoniker ComparisonExpectedMatchIcon = KnownMonikers.StatusOKNoColor;
 		private static ImageMoniker ComparisonExpectedMismatchIcon = KnownMonikers.StatusErrorOutline;
 		private static SolidColorBrush BackgroundColor = Brushes.Black;
-		private static SolidColorBrush ExpectedOutputColor = Brushes.White;
+		private static SolidColorBrush ExpectedOutputColor = Brushes.WhiteSmoke;
 		private static SolidColorBrush MatchingOutputColor = Brushes.Green;
-		private static SolidColorBrush NonmatchingOutputColor = Brushes.OrangeRed;
+		private static SolidColorBrush NonmatchingOutputColor = Brushes.Firebrick;
 		private static FontStyle OutputFontStyle = FontStyles.Normal;
 		private static FontStyle InputFontStyle = FontStyles.Italic;
 		private static FontWeight OutputFontWeight = FontWeights.Normal;
@@ -113,7 +115,7 @@ namespace ConsoleCompare
 		/// </summary>
 		public ResultsWindow() : base(null)
 		{
-			this.Caption = "Console Capture";
+			this.Caption = "Console Compare";
 
 			// This is the user control hosted by the tool window; Note that, even if this class implements IDisposable,
 			// we are not calling Dispose on this object. This is because ToolWindowPane calls Dispose on
@@ -123,7 +125,7 @@ namespace ConsoleCompare
 
 			// Create the capture manager with a reference to this window
 			capture = new CaptureManager(this);
-			SetStatus("Extension Loaded");
+			SetStatus("Extension Loaded", KnownMonikers.StatusOK);
 
 			// No simile yet, so no capture yet
 			currentSimile = null;
@@ -148,6 +150,9 @@ namespace ConsoleCompare
 			bool? result = open.ShowDialog();
 			if (result.HasValue && result.Value == true)
 			{
+				// Clear the text
+				ClearAllOutputText();
+
 				// Parse and check the results
 				string filename = Path.GetFileName(open.FileName);
 
@@ -201,6 +206,9 @@ namespace ConsoleCompare
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			// Scan for comments and report the results
+			CommentChecker.ScanForComments(windowControl);
+
 			// Can't capture without a simile
 			if (currentSimile == null)
 				return;
@@ -219,12 +227,25 @@ namespace ConsoleCompare
 
 
 		/// <summary>
-		/// Sets the status text
+		/// Sets the status text and icon
 		/// </summary>
-		/// <param name="text">New text, without the label "Status:"</param>
-		public void SetStatus(string text)
+		/// <param name="text">Text to display</param>
+		/// <param name="icon">Icon to show</param>
+		public void SetStatus(string text, ImageMoniker icon)
 		{
 			windowControl.TextStatus.Text = text;
+			windowControl.StatusIcon.Moniker = icon;
+		}
+
+		/// <summary>
+		/// Sets the comment-specific status text and icon
+		/// </summary>
+		/// <param name="text">Text to display</param>
+		/// <param name="icon">Icon to show</param>
+		public void SetCommentStatus(string text, ImageMoniker icon)
+		{
+			windowControl.TextComments.Text = text;
+			windowControl.CommentIcon.Moniker = icon;
 		}
 
 		/// <summary>

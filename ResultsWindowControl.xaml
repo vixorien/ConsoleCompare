@@ -15,24 +15,27 @@
 	
 	<Grid>
 		<Grid.RowDefinitions>
-			<RowDefinition Height="60"/>
-			<RowDefinition Height="*"/>
-			<RowDefinition Height="25"/>
+			<RowDefinition Height="30"/> <!-- Tool bar -->
+			<RowDefinition Height="32"/> <!-- Overall status -->
+			<RowDefinition Height="30"/> <!-- Comment status -->
+			<RowDefinition Height="25"/> <!-- Text box labels -->
+			<RowDefinition Height="*"/> <!-- Text boxes -->
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="*"/>
 			<ColumnDefinition Width="*"/>
 		</Grid.ColumnDefinitions>
 
-		<StackPanel
+		<!-- Top "tool" bar -->
+		<DockPanel
 			Grid.Row="0"
 			Grid.Column="0"
 			Grid.ColumnSpan="2"
-			Margin="10,5,0,0"
+			Margin="10,5,10,0"
 			Height="25" 
 			VerticalAlignment="Top"
 			Background="{DynamicResource {x:Static vsshell:VsBrushes.WindowKey}}" 
-			Orientation="Horizontal">
+			>
 
 			<Button 
 				Name="ButtonCapture" 
@@ -59,6 +62,16 @@
 			</Button>
 
 			<Button
+				Name="ButtonComments"
+				Click="ButtonComments_Click"
+				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
+				MinWidth="5"
+				Margin="20,0,0,0"
+				ToolTip="Check for comments on classes, methods and properties">
+				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.DescriptionViewer}"/>
+			</Button>
+
+			<Button
 				Name="ButtonLoadSimile"
 				Click="ButtonLoadSimile_Click"
 				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
@@ -76,60 +89,114 @@
 			<TextBlock 
 				Text="Simile File: " 
 				VerticalAlignment="Center" 
-				Margin="5,0,0,0"/>
+				Margin="5,0,0,0"
+				Width="Auto"/>
 
 			<TextBlock 
 				Name="TextSimileFileName"
 				Text="No file loaded" 
-				Width="200"
+				Width="Auto"
 				VerticalAlignment="Center"
 				Padding="3"
 				Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"/>
 
+		</DockPanel>
+
+		<!-- Overall status bar -->
+		<StatusBar 
+			Margin="5,8,5,0" 
+			Grid.Row="1" 
+			Grid.ColumnSpan="2" 
+			Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"
+			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.StatusBarTextKey}}">
 			
-			
-
-		</StackPanel>
-
-		<Label 
-			Content="Program Output:" 
-			Grid.Column="0" 
-			Grid.Row="0" 
-			HorizontalAlignment="Left" 
-			Width="105" 
-			Margin="10,30,0,0"
-			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}" Height="30" VerticalAlignment="Top"/>
-
-
-		<Label 
-			Content="Expected Output:" 
-			Grid.Column="1" 
-			Grid.Row="0" 
-			HorizontalAlignment="Left" 
-			Width="105" 
-			Margin="10,30,0,0"
-			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}" Height="30" VerticalAlignment="Top"/>
-
-		<RichTextBox Name="ProgramOutput" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Cascadia Code" Foreground="White" Background="Black" IsReadOnly="True" ScrollViewer.ScrollChanged="SyncScrollChanged" FontSize="14"/>
-		<RichTextBox Name="ExpectedOutput" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FontFamily="Cascadia Code" Background="Black" Foreground="White" IsReadOnly="True" ScrollViewer.ScrollChanged="SyncScrollChanged" FontSize="14"/>
-
-
-		<StatusBar Margin="0" Grid.Row="2" Grid.ColumnSpan="2" 
-				   Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"
-				   Foreground="{DynamicResource {x:Static vsshell:VsBrushes.StatusBarTextKey}}">
 			<StatusBarItem>
-				<imaging:CrispImage Name="StatusIcon" Moniker="{x:Static catalog:KnownMonikers.StatusOK}"/>
+				<imaging:CrispImage Margin="5,0,0,0" Name="StatusIcon" Moniker="{x:Static catalog:KnownMonikers.StatusOK}"/>
 			</StatusBarItem>
-			
+
 			<StatusBarItem>
 				<TextBlock Name="LabelStatus" Text="Status:"/>
 			</StatusBarItem>
-			
+
 			<StatusBarItem>
 				<TextBlock Name="TextStatus" Text="Loading..."/>
 			</StatusBarItem>
 
 		</StatusBar>
+
+		<!-- Comment status bar -->
+		<StatusBar 
+			Name="CommentStatusBar"
+			Margin="5,0,5,0" 
+			Grid.Row="2" 
+			Grid.ColumnSpan="2" 
+			Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"
+			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.StatusBarTextKey}}">
+
+			<StatusBarItem>
+				<imaging:CrispImage Margin="5,0,0,0" Name="CommentIcon" Moniker="{x:Static catalog:KnownMonikers.Comment}"/>
+			</StatusBarItem>
+
+			<StatusBarItem>
+				<TextBlock Name="LabelComments" Text="Comments:"/>
+			</StatusBarItem>
+
+			<StatusBarItem>
+				<TextBlock Name="TextComments" Text="Click comment button or run to check comments"/>
+			</StatusBarItem>
+
+		</StatusBar>
+		
+		<!-- Output text box labels -->
+		<Label 
+			Content="Program Output:" 
+			Grid.Column="0" 
+			Grid.Row="3" 
+			HorizontalAlignment="Left" 
+			Width="105" 
+			Margin="10,0,0,0"
+			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}" Height="30" VerticalAlignment="Top"/>
+
+		<Label 
+			Content="Expected Output:" 
+			Grid.Column="1" 
+			Grid.Row="3" 
+			HorizontalAlignment="Left" 
+			Width="105" 
+			Margin="10,0,0,0"
+			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.WindowTextKey}}" Height="30" VerticalAlignment="Top"/>
+
+		<!-- Output text boxes -->
+		<RichTextBox 
+			Name="ProgramOutput" 
+			Grid.Column="0" 
+			Grid.Row="4" 
+			HorizontalAlignment="Stretch" 
+			VerticalAlignment="Stretch" 
+			Margin="5,5,5,5" 
+			VerticalScrollBarVisibility="Auto" 
+			HorizontalScrollBarVisibility="Auto" 
+			FontFamily="Cascadia Code" 
+			Foreground="White" 
+			Background="Black" 
+			IsReadOnly="True"
+			ScrollViewer.ScrollChanged="SyncScrollChanged" 
+			FontSize="14"/>
+		<RichTextBox 
+			Name="ExpectedOutput"
+			Grid.Column="1" 
+			Grid.Row="4" 
+			HorizontalAlignment="Stretch" 
+			VerticalAlignment="Stretch" 
+			Margin="5,5,5,5"
+			HorizontalScrollBarVisibility="Auto" 
+			VerticalScrollBarVisibility="Auto" 
+			FontFamily="Cascadia Code" 
+			Background="Black"
+			Foreground="White" 
+			IsReadOnly="True" 
+			ScrollViewer.ScrollChanged="SyncScrollChanged" 
+			FontSize="14"/>
 
 	</Grid>
 </UserControl>

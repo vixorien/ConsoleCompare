@@ -15,6 +15,7 @@ using Microsoft.VisualStudio;
 using System.Security.AccessControl;
 using System.Windows.Forms;
 using VSLangProj;
+using Microsoft.VisualStudio.Imaging;
 
 namespace ConsoleCompare
 {
@@ -78,7 +79,7 @@ namespace ConsoleCompare
 			}
 
 			// Rebuild solution (wait for it to finish)
-			window.SetStatus("Building application");
+			window.SetStatus("Building application", KnownMonikers.BuildSolution);
 			dte.Solution.SolutionBuild.Build(true);
 
 			// Grab the exe path and verify
@@ -113,7 +114,7 @@ namespace ConsoleCompare
 				() => ManualIO()
 			);
 			procThread.Start();
-			window.SetStatus("Application started");
+			window.SetStatus("Application started", KnownMonikers.StatusRunning);
 
 		}
 
@@ -241,9 +242,11 @@ namespace ConsoleCompare
 				window.OpenButtonEnabled = true;
 
 				if (killThread)
-					window.SetStatus("Comparison stopped early by user");
+					window.SetStatus("Comparison stopped early by user", KnownMonikers.StatusStopped);
 				else
-					window.SetStatus($"Comparison finished - {matchCount}/{lineCount} lines match");
+					window.SetStatus(
+						$"Comparison finished - {matchCount}/{lineCount} lines match", 
+						matchCount == lineCount ? KnownMonikers.StatusOK : KnownMonikers.StatusError);
 			});
 
 			killThread = false;
