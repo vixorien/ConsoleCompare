@@ -13,22 +13,19 @@ namespace ConsoleCompare
 	/// <example>
 	/// An example simile file might look like this:
 	/// 
-	/// # Comment
-	/// 
-	/// # Blank lines are ignored, but lines with just '.' mean
-	/// # to expect a blank in the output
-	/// 
 	/// # Line notation:
 	/// # # means comment
 	/// # . means a standard line that ends with a newline, effectively Console.WriteLine()
 	/// # ; means a line without a newline, generally right before user input, effectively Console.Write() - these do NOT support numeric tags
 	/// # > means input from the user
 	/// #
-	/// # Note: Any other starting character is considered invalid
+	/// # Notes: 
+	/// # - Any other starting character is considered invalid
+	/// # - Blank lines are ignored, but lines with just '.' mean to expect a blank in the output
 	/// 
 	/// # Numeric tags:
 	/// # - Numeric data that needs to be parsed and checked for validity can be
-	/// #   denoted inside double square brackets: [[ ]]'s 
+	/// #    denoted inside double square brackets: [[ ]]'s 
 	/// # - Several options exist for data validation (see below)
 	/// # - Multiple options can be combined in a single [[ ]] with semicolons
 	/// # - NOTE: non-newline lines do not support numeric tags, as they need to have a finite length
@@ -63,7 +60,7 @@ namespace ConsoleCompare
 	/// >7
 	/// .You are 7 years old?  That's over 2555 days!
 	///
-	/// # Another comment
+	/// # The next line is expected to appear immediately after the one above
 	/// .Thank you for playing
 	/// 
 	/// </example>

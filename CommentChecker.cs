@@ -72,7 +72,10 @@ namespace ConsoleCompare
 		/// <returns>A string with XML comment count details</returns>
 		public override string ToString()
 		{
-			string results = $"Classes: {ClassXMLCommentCount}/{ClassCount}  Methods: {MethodXMLCommentCount}/{MethodCount}  Properties: {PropertyXMLCommentCount}/{PropertyCount}";
+			string results = 
+				$"Classes: {ClassXMLCommentCount}/{ClassCount}  " + 
+				$"Methods: {MethodXMLCommentCount}/{MethodCount}  " +
+				$"Properties: {PropertyXMLCommentCount}/{PropertyCount}";
 
 			// Any regular comments that should be XML?
 			if (RegularCommentTotal > 0)

@@ -125,7 +125,7 @@ namespace ConsoleCompare
 
 			// Create the capture manager with a reference to this window
 			capture = new CaptureManager(this);
-			SetStatus("Extension Loaded", KnownMonikers.StatusOK);
+			SetStatus("Extension ready. Load simile file to begin.", KnownMonikers.StatusInformation);
 
 			// No simile yet, so no capture yet
 			currentSimile = null;
@@ -190,11 +190,13 @@ namespace ConsoleCompare
 				{
 					windowControl.TextSimileFileName.Text = "Load Simile File";
 					CaptureButtonEnabled = false;
+					SetStatus("Invalid simile file.", KnownMonikers.StatusError);
 				}
 				else
 				{
 					windowControl.TextSimileFileName.Text = filename;
 					CaptureButtonEnabled = true;
+					SetStatus("Simile file loaded. Press run button to compare output.", KnownMonikers.StatusInformation);
 				}
 			}
 		}
