@@ -3,6 +3,8 @@ using Microsoft.VisualStudio.Text.Classification;
 using System;
 using System.Collections.Generic;
 
+// Details on overall classifier setup: https://stackoverflow.com/a/37602798
+
 namespace ConsoleCompare
 {
 	/// <summary>
@@ -51,12 +53,38 @@ namespace ConsoleCompare
 		/// <returns>A list of ClassificationSpans that represent spans identified to be of this classification.</returns>
 		public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span)
 		{
-			var result = new List<ClassificationSpan>()
-			{
-				new ClassificationSpan(new SnapshotSpan(span.Snapshot, new Span(span.Start, span.Length)), this.classificationType)
-			};
+			// Build the results up
+			List<ClassificationSpan> results = new List<ClassificationSpan>();
 
-			return result;
+			// Grab the overall text of this span
+			string text = span.GetText();
+
+			// Find all tag groups
+			int currentPosition = 0;
+			int tagStart = -1;
+			while ((tagStart = text.IndexOf(SimileParser.ElementTagStart, currentPosition)) >= 0)
+			{
+				// Found a start, move ahead and look for an end
+				currentPosition = tagStart + SimileParser.ElementTagStart.Length;
+				int tagEnd = text.IndexOf(SimileParser.ElementTagEnd, currentPosition);
+				if (tagEnd > tagStart)
+				{
+					// Found the next end, so we have a complete tag
+					int tagStartInSpan = span.Start + tagStart;
+					int tagLength = tagEnd - tagStart + SimileParser.ElementTagEnd.Length;
+					SnapshotSpan tagSpan = new SnapshotSpan(span.Snapshot, new Span(tagStartInSpan, tagLength));
+
+					// Create an add the classification
+					results.Add(new ClassificationSpan(tagSpan, this.classificationType));
+
+					// Remember this position
+					currentPosition = tagEnd + SimileParser.ElementTagEnd.Length;
+				}
+
+			}
+
+			// Return the list, which may be empty
+			return results;
 		}
 
 		#endregion

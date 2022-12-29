@@ -22,7 +22,7 @@ namespace ConsoleCompare
 		public SimileClassifierFormat()
 		{
 			this.DisplayName = "SimileClassifier"; // Human readable version of the name
-			this.BackgroundColor = Colors.BlueViolet;
+			this.BackgroundColor = Colors.Green;
 			this.TextDecorations = System.Windows.TextDecorations.Underline;
 		}
 	}

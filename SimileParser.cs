@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Linq.Expressions;
 using System.CodeDom;
+using EnvDTE;
+using System.Linq;
 
 namespace ConsoleCompare
 {
@@ -11,10 +13,17 @@ namespace ConsoleCompare
 	/// Helper class for parsing a ConsoleSimile from an array of lines
 	/// </summary>
 	/// <example>
-	/// An example simile file might look like this:
-	/// 
 	/// # Line notation:
-	/// # # means comment
+	/// # - Lines beginning with # are ignored as comments
+	/// # - All other lines are processed as expected output, including blank lines
+	/// #
+	/// # - User Input via Input Tags
+	/// #   - User input is represented by an input tag: a string between {{ }}'s
+	/// #   - Examples: {{Hello there}} or {{12345}} or {{Jimmy}}
+	/// #   - Input tags MUST appear at the end of a line
+	/// #   - Input tags CANNOT appear on a line with a numeric tag (see below)
+	/// 
+	/// OLD...
 	/// # . means a standard line that ends with a newline, effectively Console.WriteLine()
 	/// # ; means a line without a newline, generally right before user input, effectively Console.Write() - these do NOT support numeric tags
 	/// # > means input from the user
@@ -22,6 +31,12 @@ namespace ConsoleCompare
 	/// # Notes: 
 	/// # - Any other starting character is considered invalid
 	/// # - Blank lines are ignored, but lines with just '.' mean to expect a blank in the output
+	/// 
+	/// # Input tags:
+	/// # - Represents user input fed to the program
+	/// # - This data is always processed as a string
+	/// # - An input tag MUST be at the end of a line
+	/// # - Examples: {{Hello there}} or {{12345}} or {{Jimmy}}
 	/// 
 	/// # Numeric tags:
 	/// # - Numeric data that needs to be parsed and checked for validity can be
@@ -67,16 +82,18 @@ namespace ConsoleCompare
 	internal static class SimileParser
 	{
 		// Parsing details
-		private const char PrefaceOutputWithNewLine = '.';
-		private const char PrefaceOutputWithoutNewLine = ';';
-		private const char PrefaceInput = '>';
-		private const char PrefaceComment = '#';
-		private const string ElementTagStart = "[[";
-		private const string ElementTagEnd = "]]";
-		private const string ElementOptionDelimeter = ";";
-		private const string ElementOptionEquals = "=";
-		private const string ElementValueSetStart = "{";
-		private const string ElementValueSetEnd = "}";
+		public const char PrefaceOutputWithNewLine = '.';
+		public const char PrefaceOutputWithoutNewLine = ';';
+		public const char PrefaceInput = '>';
+		public const string PrefaceComment = "#";
+		public const string ElementTagStart = "[[";
+		public const string ElementTagEnd = "]]";
+		public const string ElementOptionDelimeter = ";";
+		public const string ElementOptionEquals = "=";
+		public const string ElementValueSetStart = "{";
+		public const string ElementValueSetEnd = "}";
+		public const string InputTagStart = "{{";
+		public const string InputTagEnd = "}}";
 
 
 		/// <summary>
@@ -110,7 +127,7 @@ namespace ConsoleCompare
 			{
 				// If the parse fails, throw an exception to pass failure details up
 				// - TODO: Capture more details on the failure reason
-				if (!ParseLine(line, result))
+				if (!ParseLine(line, lineNumber, result))
 					throw new SimileParseException("Error parsing line " + lineNumber, line, lineNumber);
 
 				lineNumber++;
@@ -123,60 +140,202 @@ namespace ConsoleCompare
 		/// Parses a single line and adds the result, if any, to the simile
 		/// </summary>
 		/// <param name="line">Line to parse</param>
+		/// <param name="lineNumber">The number of the line (1-based)</param>
 		/// <param name="simile">Simile to add to</param>
 		/// <returns>True if the line is valid or blank, false if invalid</returns>
-		private static bool ParseLine(string line, ConsoleSimile simile)
+		private static bool ParseLine(string line, int lineNumber, ConsoleSimile simile)
 		{
-			// Check for empty line - return true as empty lines are perfectly valid
-			if (string.IsNullOrEmpty(line))
-				return true;
+			// A null line is invalid
+			if (line == null)
+				return false;
 
-			// Check the first character
-			switch (line[0])
+			// Check for empty lines
+			if (line.Length == 0)
 			{
-				// Simple parsing for now
-				case PrefaceOutputWithNewLine:
-					{
-						// Remove the first character
-						line = line.Substring(1);
-
-						// Create the output line and parse
-						SimileLineOutput output = new SimileLineOutput(line, LineEndingType.NewLine);
-						if (!ParseOutputElements(line, output))
-							return false;
-
-						// Success
-						simile.AddOutput(output);
-						break;
-					}
-
-				case PrefaceOutputWithoutNewLine:
-					{
-						// Remove the first character
-						line = line.Substring(1);
-
-						// Create the output line and parse
-						SimileLineOutput output = new SimileLineOutput(line, LineEndingType.SameLine);
-						if (!ParseOutputElements(line, output))
-							return false;
-
-						// Success
-						simile.AddOutput(output);
-						break;
-					}
-
-				// Input is very basic at the moment
-				case PrefaceInput: simile.AddInput(line.Substring(1)); break;
-
-				// Comments: Simply ignore, but here if we want to do something
-				case PrefaceComment: break;
-
-				// Any other character results in an invalid parse
-				default: return false;
+				// Add an expected empty line
+				simile.AddOutput(new SimileLineOutput("", LineEndingType.NewLine));
+				return true;
 			}
 
-			// Valid line, even if a comment
+			// Comment lines are valid but do not add to the simile
+			if (line.StartsWith(PrefaceComment))
+				return true;
+
+			// Split the line into various line elements
+			List<string> lineElements = SplitLineElements(line, lineNumber);
+
+			// Count tag types
+			int numericElementCount = 0;
+			int inputElementCount = 0;
+			int textElementCount = 0;
+			int lastInputIndex = -1;
+			for(int i = 0; i < lineElements.Count; i++)
+			{
+				if (lineElements[i].StartsWith(InputTagStart))
+				{
+					inputElementCount++;
+					lastInputIndex = i;
+				}
+				else if (lineElements[i].StartsWith(ElementTagStart))
+				{
+					numericElementCount++;
+				}
+				else
+				{
+					textElementCount++;
+				}
+			}
+
+			// Handle input tag first
+
+			// Maximum of 1
+			if (inputElementCount > 1)
+				throw new SimileParseException("Lines may have a maximum of one input tag", line, lineNumber);
+
+			// Cannot mix tags
+			if(inputElementCount == 1 && numericElementCount > 0)
+				throw new SimileParseException("Input tags may not appear on the same line as a numeric tag", line, lineNumber);
+
+			// Must be last element on a line
+			if(lastInputIndex >= 0 && lastInputIndex != lineElements.Count - 1)
+				throw new SimileParseException("Input tags may only appear at the end of a line", line, lineNumber);
+
+			// We know that if there is an input element, it's alone or at the end of a line
+			if (inputElementCount == 1)
+			{
+				// Alone?
+				if (lineElements.Count == 0)
+				{
+					// By itself, so add to the simile and we're done
+					simile.AddInput(StripInputTag(lineElements[0]));
+					return true;
+				}
+				else
+				{
+					// With one other text element beforehand, so add both
+					// and we're done.  Note that the output is on the same line!
+					simile.AddOutput(lineElements[0], LineEndingType.SameLine);
+					simile.AddInput(StripInputTag(lineElements[1]));
+					return true;
+				}
+			}
+
+			// Only thing left should be text and numeric elements
+			SimileLineOutput output = new SimileLineOutput(line, LineEndingType.NewLine);
+			if (!ParseOutputElements(line, output))
+				return false;
+
+			// Success
+			simile.AddOutput(output);
 			return true;
+		}
+
+		/// <summary>
+		/// Splits a line into its various elements: input tags, numeric tags and plain text
+		/// </summary>
+		/// <param name="line">The line of text to split</param>
+		/// <param name="lineNumber">The line number for exception reporting</param>
+		/// <returns>A List of line element strings</returns>
+		private static List<string> SplitLineElements(string line, int lineNumber)
+		{
+			List<string> elements = new List<string>();
+			string originalLine = line; // Save a copy for possible exceptions
+
+			// Keep going while there are characters left
+			while (line.Length > 0)
+			{
+				// Look for the next start tag
+				int numericTagStartIndex = line.IndexOf(ElementTagStart);
+				int inputTagStartIndex = line.IndexOf(InputTagStart);
+
+				if ( // Only a numeric tag, or both exist and the numeric is first
+					(numericTagStartIndex >= 0 && inputTagStartIndex == -1) ||
+					(numericTagStartIndex >= 0 && numericTagStartIndex < inputTagStartIndex))
+				{
+					// Anything before tag?
+					if (numericTagStartIndex > 0)
+					{
+						// Add the beginning of the line and remove
+						elements.Add(line.Substring(0, numericTagStartIndex));
+						line = line.Substring(numericTagStartIndex);
+					}
+
+					// String starts with tag now, search for end
+					int numericTagEndIndex = line.IndexOf(ElementTagEnd);
+					if (numericTagEndIndex == -1)
+						throw new SimileParseException("Numeric tag not ended properly", originalLine, lineNumber);
+
+					// Full tag exists, so add to elements and remove
+					elements.Add(line.Substring(0, numericTagEndIndex + ElementTagEnd.Length));
+					line = line.Substring(numericTagEndIndex + ElementTagEnd.Length);
+				}
+				else if ( // Only an input tag, or both exist and the input tag is first
+					(inputTagStartIndex >= 0 && numericTagStartIndex == -1) ||
+					(inputTagStartIndex >= 0 && inputTagStartIndex < numericTagStartIndex))
+				{
+					// Anything before tag?
+					if (inputTagStartIndex > 0)
+					{
+						// Add the beginning of the line and remove
+						elements.Add(line.Substring(0, inputTagStartIndex));
+						line = line.Substring(inputTagStartIndex);
+					}
+
+					// String starts with tag now, search for end
+					int inputTagEndIndex = line.IndexOf(InputTagEnd);
+					if (inputTagEndIndex == -1)
+						throw new SimileParseException("Input tag not ended properly", originalLine, lineNumber);
+
+					// Full tag exists, so add to elements and remove
+					elements.Add(line.Substring(0, inputTagEndIndex + InputTagEnd.Length));
+					line = line.Substring(inputTagEndIndex + InputTagEnd.Length);
+				}
+				else // No tags, add the remainder to the elements
+				{
+					elements.Add(line);
+					line = ""; // Nothing left
+				}
+			}
+
+			return elements;
+		}
+
+		// CURRENTLY UNUSED
+		private static string SearchForTag(string line, string tagStart, string tagEnd, int startIndex = 0)
+		{
+			// Empty lines obviously have no tags
+			if (string.IsNullOrEmpty(line))
+				return null;
+
+			// Search for input tags
+			int tagStartIndex = line.IndexOf(InputTagStart, startIndex);
+			int tagEndIndex = line.IndexOf(InputTagEnd, startIndex);
+
+			// If the end is first, or both are not found, no tag!
+			if (tagEndIndex <= tagStartIndex)
+				return null;
+
+			// If one or the other, but not both, exist, no tag!
+			if (tagStartIndex == -1 ^ tagEndIndex == -1) // XOR
+				return null;
+
+			// Both exist, so return the tag
+			return line.Substring(tagStartIndex, tagEndIndex - tagStartIndex + tagEnd.Length);
+		}
+
+		/// <summary>
+		/// Strip the start and end tags from an input tag string if both are present
+		/// </summary>
+		/// <param name="tag">The tag to strip</param>
+		/// <returns>The stripped tag if it begins and ends properly, otherwise the original string</returns>
+		private static string StripInputTag(string tag)
+		{
+			// Verify the tag starts and ends properly
+			if(tag.StartsWith(InputTagStart) && tag.EndsWith(InputTagEnd))
+				return tag.Substring(InputTagStart.Length, tag.Length - InputTagStart.Length - InputTagEnd.Length);
+
+			// Not a valid input tag so just return the original
+			return tag;
 		}
 
 		/// <summary>
@@ -252,7 +411,7 @@ namespace ConsoleCompare
 		private static bool ParseNumericTag(string tag, SimileLineOutput output)
 		{
 			// Split into options
-			string[] allOptions = tag.Split(new string[]{ ElementOptionDelimeter}, StringSplitOptions.RemoveEmptyEntries);
+			string[] allOptions = tag.Split(new string[]{ ElementOptionDelimeter }, StringSplitOptions.RemoveEmptyEntries);
 
 			// Process each option
 			SimileNumericType type = SimileNumericType.Unknown;
