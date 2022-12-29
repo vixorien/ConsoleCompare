@@ -15,7 +15,9 @@ namespace ConsoleCompare
 		/// <summary>
 		/// Classification type.
 		/// </summary>
-		private readonly IClassificationType classificationType;
+		private readonly IClassificationType simileErrorType;
+		private readonly IClassificationType simileInputTagType;
+		private readonly IClassificationType simileNumericTagType;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SimileClassifier"/> class.
@@ -23,7 +25,9 @@ namespace ConsoleCompare
 		/// <param name="registry">Classification registry.</param>
 		internal SimileClassifier(IClassificationTypeRegistryService registry)
 		{
-			this.classificationType = registry.GetClassificationType("SimileClassifier");
+			simileErrorType = registry.GetClassificationType(SimileClassifications.SimileErrorClassifier);
+			simileInputTagType = registry.GetClassificationType(SimileClassifications.SimileInputTagClassifier);
+			simileNumericTagType = registry.GetClassificationType(SimileClassifications.SimileNumericTagClassifier);
 		}
 
 		#region IClassifier
@@ -75,7 +79,7 @@ namespace ConsoleCompare
 					SnapshotSpan tagSpan = new SnapshotSpan(span.Snapshot, new Span(tagStartInSpan, tagLength));
 
 					// Create an add the classification
-					results.Add(new ClassificationSpan(tagSpan, this.classificationType));
+					results.Add(new ClassificationSpan(tagSpan, simileNumericTagType));
 
 					// Remember this position
 					currentPosition = tagEnd + SimileParser.ElementTagEnd.Length;

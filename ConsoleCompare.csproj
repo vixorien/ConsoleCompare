@@ -64,8 +64,7 @@
       <DependentUpon>ResultsWindowControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="SimileClassifier.cs" />
-    <Compile Include="SimileClassifierClassificationDefinition.cs" />
-    <Compile Include="SimileClassifierFormat.cs" />
+    <Compile Include="SimileClassifications.cs" />
     <Compile Include="SimileClassifierProvider.cs" />
     <Compile Include="SimileEditorWindow.cs" />
     <Compile Include="SimileEditorWindowCommand.cs" />

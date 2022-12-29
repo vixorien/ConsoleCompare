@@ -12,79 +12,58 @@ namespace ConsoleCompare
 	/// <summary>
 	/// Helper class for parsing a ConsoleSimile from an array of lines
 	/// </summary>
+	/// <remarks>
+	///  Line notation:
+	///  - Lines beginning with # are ignored as comments
+	///  - All other lines are processed as expected output, including blank lines
+	/// 
+	///  - Input tags:
+	///    - User input is represented by an input tag: a string between {{ }}'s
+	///    - Examples: {{Hello there}} or {{12345}} or {{Jimmy}}
+	///    - Input tags MUST appear at the end of a line
+	///    - Input tags CANNOT appear on a line with a numeric tag (see below)
+	/// 
+	///  Numeric tags:
+	///  - Numeric data that needs to be parsed and checked for validity can be
+	///     denoted inside double square brackets: [[ ]]'s 
+	///  - Several options exist for data validation (see below)
+	///  - Multiple options can be combined in a single [[ ]] with semicolons
+	///  - NOTE: non-newline lines do not support numeric tags, as they need to have a finite length
+	///  
+	///  Syntax:
+	///  - type (required)
+	///    - supported types: byte, sbyte, short, ushort, int, uint, long, ulong, float, double, char
+	///    - short names: b, sb, s, us, i, ui, l, ul, f, d, c
+	///    - examples: [[t=s]] or [[type=s]] or [[t=short]] would expect a short
+	/// 
+	///  - min / max (optional)
+	///    - inclusive minimum and/or inclusive maximum for parsed numeric value
+	///    - examples: [[min=-10]] or [[min=3.14159]] or [[min=1979]] or [[max=99]] or [[min=-5;max=5]]
+	/// 
+	///  - value set (optional)
+	///    - a set of one or more expected values
+	///    - examples: [[v={1,2,3,4}]] or [[values={5,10,15,20}]] or [[v={88}]]
+	/// 
+	///  - precision (optional)
+	///    - Acceptable precision bounds (mostly for floating point rounding errors)
+	///    - Must be an integer between 0-15 (inclusive)
+	///    - Rounds the results to the given precision for checking
+	///    - examples: [[precision=3]] or [[p=5]]
+	/// </remarks>
 	/// <example>
-	/// # Line notation:
-	/// # - Lines beginning with # are ignored as comments
-	/// # - All other lines are processed as expected output, including blank lines
-	/// #
-	/// # - User Input via Input Tags
-	/// #   - User input is represented by an input tag: a string between {{ }}'s
-	/// #   - Examples: {{Hello there}} or {{12345}} or {{Jimmy}}
-	/// #   - Input tags MUST appear at the end of a line
-	/// #   - Input tags CANNOT appear on a line with a numeric tag (see below)
+	/// # This line is a comment
+	/// Hello, World!
+	/// What is your name? {{Chris}}
+	/// Hello, Chris!
 	/// 
-	/// OLD...
-	/// # . means a standard line that ends with a newline, effectively Console.WriteLine()
-	/// # ; means a line without a newline, generally right before user input, effectively Console.Write() - these do NOT support numeric tags
-	/// # > means input from the user
-	/// #
-	/// # Notes: 
-	/// # - Any other starting character is considered invalid
-	/// # - Blank lines are ignored, but lines with just '.' mean to expect a blank in the output
-	/// 
-	/// # Input tags:
-	/// # - Represents user input fed to the program
-	/// # - This data is always processed as a string
-	/// # - An input tag MUST be at the end of a line
-	/// # - Examples: {{Hello there}} or {{12345}} or {{Jimmy}}
-	/// 
-	/// # Numeric tags:
-	/// # - Numeric data that needs to be parsed and checked for validity can be
-	/// #    denoted inside double square brackets: [[ ]]'s 
-	/// # - Several options exist for data validation (see below)
-	/// # - Multiple options can be combined in a single [[ ]] with semicolons
-	/// # - NOTE: non-newline lines do not support numeric tags, as they need to have a finite length
-	/// # 
-	/// # Syntax:
-	/// # - type (required)
-	/// #   - supported types: byte, sbyte, short, ushort, int, uint, long, ulong, float, double, char
-	/// #   - short names: b, sb, s, us, i, ui, l, ul, f, d, c
-	/// #   - examples: [[t=s]] or [[type=s]] or [[t=short]] would expect a short
-	/// #
-	/// # - min / max (optional)
-	/// #   - inclusive minimum and/or inclusive maximum for parsed numeric value
-	/// #   - examples: [[min=-10]] or [[min=3.14159]] or [[min=1979]] or [[max=99]] or [[min=-5;max=5]]
-	/// #
-	/// # - value set (optional)
-	/// #   - a set of one or more expected values
-	/// #   - examples: [[v={1,2,3,4}]] or [[values={5,10,15,20}]] or [[v={88}]]
-	/// #
-	/// # - precision (optional)
-	/// #   - Acceptable precision bounds (mostly for floating point rounding errors)
-	/// #   - Must be an integer between 0-15 (inclusive)
-	/// #   - Rounds the results to the given precision for checking
-	/// #   - examples: [[precision=3]] or [[p=5]]
-	/// 
-	/// 
-	/// .Hello, World!
-	/// ;What is your name?
-	/// >Chris
-	/// .Hello, Chris!
-	/// .
-	/// ;What is your age?
-	/// >7
-	/// .You are 7 years old?  That's over 2555 days!
+	/// What is your age? {{7}}
+	/// You are 7 years old?  That's over [[type=int]] days!
 	///
-	/// # The next line is expected to appear immediately after the one above
-	/// .Thank you for playing
-	/// 
+	/// Thank you for playing
 	/// </example>
 	internal static class SimileParser
 	{
 		// Parsing details
-		public const char PrefaceOutputWithNewLine = '.';
-		public const char PrefaceOutputWithoutNewLine = ';';
-		public const char PrefaceInput = '>';
 		public const string PrefaceComment = "#";
 		public const string ElementTagStart = "[[";
 		public const string ElementTagEnd = "]]";
