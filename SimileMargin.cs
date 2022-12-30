@@ -11,19 +11,19 @@ namespace ConsoleCompare
 	/// </summary>
 	internal class SimileMargin : Canvas, IWpfTextViewMargin
 	{
+		// Constants for display sizing
 		private const int sizeOpen = 200;
 		private const int sizeCollapsed = 20;
 
+		// Content details
 		private bool marginOpen;
+		private Label contentCollapsed;
+		private ScrollViewer contentOpen;
 
-		/// <summary>
-		/// Margin name.
-		/// </summary>
+		// Required for Visual Studio margin details (part of the template - do not remove)
 		public const string MarginName = "SimileMargin";
 
-		/// <summary>
-		/// A value indicating whether the object is disposed.
-		/// </summary>
+		// Required for IDisposable implementation
 		private bool isDisposed;
 
 		/// <summary>
@@ -32,46 +32,87 @@ namespace ConsoleCompare
 		/// <param name="textView">The <see cref="IWpfTextView"/> to attach the margin to.</param>
 		public SimileMargin(IWpfTextView textView)
 		{
-			marginOpen = true;
-			this.Height = sizeOpen; // start open
 			this.ClipToBounds = true;
 			this.Background = new SolidColorBrush(Colors.Black);
 
 			// Set up events
-			this.MouseDown += SimileMargin_MouseDown;
+			this.MouseUp += SimileMargin_MouseUp;
+			this.SizeChanged += SimileMargin_SizeChanged;
 
-			// Add a green colored label that says "Hello SimileMargin"
-			var label = new Label
+			// Lable for when the margin is collapsed
+			contentCollapsed = new Label
 			{
 				Background = new SolidColorBrush(Colors.Black),
 				Foreground = new SolidColorBrush(Colors.WhiteSmoke),
-				Content = "Hello SimileMargin",
-				FontFamily = new FontFamily("Cascadia Code")
+				FontFamily = new FontFamily("Cascadia Code"),
+				Content = "Click for simile file syntax..."
+			};
+
+			// Content for when the margin is open
+			contentOpen = new ScrollViewer
+			{
+				Width = this.Width,
+				Height = this.Height,
+				VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
+				HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
+				Background = new SolidColorBrush(Colors.Black),
+				Foreground = new SolidColorBrush(Colors.WhiteSmoke),
+				FontFamily = new FontFamily("Cascadia Code"),
+				Content =
+				"Simile File Syntax\n" +
+				"Regular Text (Output):\n" +
+				"Numeric Tags:\n" +
+				"Input Tags:\n"
 			};
 
 			
-			this.Children.Add(label);
+			this.Children.Add(contentCollapsed);
+			this.Children.Add(contentOpen);
+
+			// Set the initial state to closed (after creating labels!)
+			SetMarginState(false);
+		}
+
+		/// <summary>
+		/// Handles a resize of content when the margin size is changed
+		/// </summary>
+		private void SimileMargin_SizeChanged(object sender, SizeChangedEventArgs e)
+		{
+			// Update the scroll viewer to the margin's actual size
+			if (e.WidthChanged) contentOpen.Width = e.NewSize.Width;
+			if (e.HeightChanged) contentOpen.Height = e.NewSize.Height;
+		}
+
+		/// <summary>
+		/// Sets the margin's collapsed/open state and other corresponding UI elements
+		/// </summary>
+		/// <param name="open">Should the margin be fully open (true) or collapsed (false)</param>
+		private void SetMarginState(bool open)
+		{
+			// Save new state and update accordingly
+			marginOpen = open;
+			this.Height = marginOpen ? sizeOpen : sizeCollapsed;
+
+			// Flip flop the content visibility, too
+			if (marginOpen)
+			{
+				contentOpen.Visibility = Visibility.Visible;
+				contentCollapsed.Visibility = Visibility.Collapsed;
+			}
+			else
+			{
+				contentOpen.Visibility = Visibility.Collapsed;
+				contentCollapsed.Visibility = Visibility.Visible;
+			}
 		}
 
 		/// <summary>
 		/// Handles a mouse click in the margin
 		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void SimileMargin_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+		private void SimileMargin_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
 		{
-			if (marginOpen)
-			{
-				// Collapse
-				marginOpen = false;
-				this.Height = sizeCollapsed;
-			}
-			else
-			{
-				// Open back up
-				marginOpen = true;
-				this.Height = sizeOpen;
-			}
+			// Flip the state
+			SetMarginState(!marginOpen);
 		}
 
 		#region IWpfTextViewMargin

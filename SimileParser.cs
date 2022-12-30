@@ -65,12 +65,12 @@ namespace ConsoleCompare
 	{
 		// Parsing details
 		public const string PrefaceComment = "#";
-		public const string ElementTagStart = "[[";
-		public const string ElementTagEnd = "]]";
-		public const string ElementOptionDelimeter = ";";
-		public const string ElementOptionEquals = "=";
-		public const string ElementValueSetStart = "{";
-		public const string ElementValueSetEnd = "}";
+		public const string NumericTagStart = "[[";
+		public const string NumericTagEnd = "]]";
+		public const string NumericOptionDelimeter = ";";
+		public const string NumericOptionEquals = "=";
+		public const string NumericValueSetStart = "{";
+		public const string NumericValueSetEnd = "}";
 		public const string InputTagStart = "{{";
 		public const string InputTagEnd = "}}";
 
@@ -155,7 +155,7 @@ namespace ConsoleCompare
 					inputElementCount++;
 					lastInputIndex = i;
 				}
-				else if (lineElements[i].StartsWith(ElementTagStart))
+				else if (lineElements[i].StartsWith(NumericTagStart))
 				{
 					numericElementCount++;
 				}
@@ -186,7 +186,7 @@ namespace ConsoleCompare
 				if (lineElements.Count == 0)
 				{
 					// By itself, so add to the simile and we're done
-					simile.AddInput(StripInputTag(lineElements[0]));
+					simile.AddInput(StripTag(lineElements[0]));
 					return true;
 				}
 				else
@@ -194,7 +194,7 @@ namespace ConsoleCompare
 					// With one other text element beforehand, so add both
 					// and we're done.  Note that the output is on the same line!
 					simile.AddOutput(lineElements[0], LineEndingType.SameLine);
-					simile.AddInput(StripInputTag(lineElements[1]));
+					simile.AddInput(StripTag(lineElements[1]));
 					return true;
 				}
 			}
@@ -224,7 +224,7 @@ namespace ConsoleCompare
 			while (line.Length > 0)
 			{
 				// Look for the next start tag
-				int numericTagStartIndex = line.IndexOf(ElementTagStart);
+				int numericTagStartIndex = line.IndexOf(NumericTagStart);
 				int inputTagStartIndex = line.IndexOf(InputTagStart);
 
 				if ( // Only a numeric tag, or both exist and the numeric is first
@@ -240,13 +240,13 @@ namespace ConsoleCompare
 					}
 
 					// String starts with tag now, search for end
-					int numericTagEndIndex = line.IndexOf(ElementTagEnd);
+					int numericTagEndIndex = line.IndexOf(NumericTagEnd);
 					if (numericTagEndIndex == -1)
 						throw new SimileParseException("Numeric tag not ended properly", originalLine, lineNumber);
 
 					// Full tag exists, so add to elements and remove
-					elements.Add(line.Substring(0, numericTagEndIndex + ElementTagEnd.Length));
-					line = line.Substring(numericTagEndIndex + ElementTagEnd.Length);
+					elements.Add(line.Substring(0, numericTagEndIndex + NumericTagEnd.Length));
+					line = line.Substring(numericTagEndIndex + NumericTagEnd.Length);
 				}
 				else if ( // Only an input tag, or both exist and the input tag is first
 					(inputTagStartIndex >= 0 && numericTagStartIndex == -1) ||
@@ -303,19 +303,25 @@ namespace ConsoleCompare
 		}
 
 		/// <summary>
-		/// Strip the start and end tags from an input tag string if both are present
+		/// Strip the start and end characters from a tag string if both are present
 		/// </summary>
 		/// <param name="tag">The tag to strip</param>
 		/// <returns>The stripped tag if it begins and ends properly, otherwise the original string</returns>
-		private static string StripInputTag(string tag)
+		private static string StripTag(string tag)
 		{
-			// Verify the tag starts and ends properly
+			// Check input tag
 			if(tag.StartsWith(InputTagStart) && tag.EndsWith(InputTagEnd))
 				return tag.Substring(InputTagStart.Length, tag.Length - InputTagStart.Length - InputTagEnd.Length);
 
-			// Not a valid input tag so just return the original
+			// Check numeric tag
+			if (tag.StartsWith(NumericTagStart) && tag.EndsWith(NumericTagEnd))
+				return tag.Substring(NumericTagStart.Length, tag.Length - NumericTagStart.Length - NumericTagEnd.Length);
+
+			// Does not contain valid tag characters so just return the original
 			return tag;
 		}
+
+
 
 		/// <summary>
 		/// Recursive helper to parse the elements of a single line of output
@@ -330,8 +336,8 @@ namespace ConsoleCompare
 				return true;
 
 			// Search for numeric tags
-			int startIndex = line.IndexOf(ElementTagStart);
-			int endIndex = line.IndexOf(ElementTagEnd);
+			int startIndex = line.IndexOf(NumericTagStart);
+			int endIndex = line.IndexOf(NumericTagEnd);
 
 			// If the end tag is first, we're invalid
 			if (endIndex < startIndex)
@@ -369,8 +375,8 @@ namespace ConsoleCompare
 			}
 
 			// Grab the tag and the remainder		
-			string tag = line.Substring(startIndex + ElementTagStart.Length, endIndex - startIndex - ElementTagStart.Length);
-			string remainder = line.Substring(endIndex + ElementTagEnd.Length);
+			string tag = line.Substring(startIndex + NumericTagStart.Length, endIndex - startIndex - NumericTagStart.Length);
+			string remainder = line.Substring(endIndex + NumericTagEnd.Length);
 
 			// Parse the tag
 			if (!ParseNumericTag(tag, output))
@@ -381,16 +387,18 @@ namespace ConsoleCompare
 		}
 
 		/// <summary>
-		/// Parses the contents of a numeric tag from an output line.  This assumes the start and end 
-		/// characters [[ ]]'s have already been stripped away.
+		/// Parses the contents of a numeric tag.  This method will strip the tag characters if they exist.
 		/// </summary>
-		/// <param name="tag">The tag from the string</param>
-		/// <param name="output">The output to add the numeric element to</param>
+		/// <param name="tag">The tag itself</param>
+		/// <param name="output">The output to add the numeric element to, or null if just checking validity</param>
 		/// <returns>True if the tag is parsed successfully, false otherwise</returns>
-		private static bool ParseNumericTag(string tag, SimileLineOutput output)
+		public static bool ParseNumericTag(string tag, SimileLineOutput output)
 		{
+			// Strip the tag characters if necessary
+			tag = StripTag(tag);
+
 			// Split into options
-			string[] allOptions = tag.Split(new string[]{ ElementOptionDelimeter }, StringSplitOptions.RemoveEmptyEntries);
+			string[] allOptions = tag.Split(new string[]{ NumericOptionDelimeter }, StringSplitOptions.RemoveEmptyEntries);
 
 			// Process each option
 			SimileNumericType type = SimileNumericType.Unknown;
@@ -402,7 +410,7 @@ namespace ConsoleCompare
 			foreach (string op in allOptions)
 			{
 				// Split across the equals and check
-				string[] pieces = op.Split(new string[] { ElementOptionEquals }, StringSplitOptions.RemoveEmptyEntries);
+				string[] pieces = op.Split(new string[] { NumericOptionEquals }, StringSplitOptions.RemoveEmptyEntries);
 				if (pieces.Length != 2)
 					return false;
 
@@ -429,12 +437,12 @@ namespace ConsoleCompare
 					case "v":
 					case "values":
 						// Verify set has { }'s around the values
-						if (!pieces[1].StartsWith(ElementValueSetStart) || 
-							!pieces[1].EndsWith(ElementValueSetEnd))
+						if (!pieces[1].StartsWith(NumericValueSetStart) || 
+							!pieces[1].EndsWith(NumericValueSetEnd))
 							return false;
 
 						// Strip the start and end pieces, then split
-						pieces[1] = pieces[1].Substring(ElementValueSetStart.Length, pieces[1].Length - ElementValueSetStart.Length - ElementValueSetEnd.Length);
+						pieces[1] = pieces[1].Substring(NumericValueSetStart.Length, pieces[1].Length - NumericValueSetStart.Length - NumericValueSetEnd.Length);
 						values = pieces[1].Split(',');
 						break;
 
@@ -480,7 +488,7 @@ namespace ConsoleCompare
 		/// <param name="max">Maximum value, or null for none</param>
 		/// <param name="values">Array of values, or null for none</param>
 		/// <param name="precision">Precision value, or null for none</param>
-		/// <param name="output">The output to add the element to</param>
+		/// <param name="output">The output to add the element to, or null if just checking validity</param>
 		/// <returns>True if all strings are parsed correctly, false otherwise</returns>
 		private static bool CreateNumericElement<T>(SimileNumericType type, string min, string max, string[] values, string precision, SimileLineOutput output)
 			where T : struct, IComparable
@@ -500,8 +508,8 @@ namespace ConsoleCompare
 						return false;
 				}
 
-				// Add the element to the output line
-				output.AddNumericElement(num);
+				// Add the element to the output line if non-null
+				output?.AddNumericElement(num);
 				return true;
 			}
 			catch 

@@ -1,9 +1,12 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using System;
 using System.Collections.Generic;
 
 // Details on overall classifier setup: https://stackoverflow.com/a/37602798
+// Options for adding errors to error list: https://stackoverflow.com/a/59608426
 
 namespace ConsoleCompare
 {
@@ -16,8 +19,11 @@ namespace ConsoleCompare
 		/// Classification type.
 		/// </summary>
 		private readonly IClassificationType simileErrorType;
+		private readonly IClassificationType simileCommentType;
 		private readonly IClassificationType simileInputTagType;
 		private readonly IClassificationType simileNumericTagType;
+
+		private ErrorListProvider errorListProvider;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SimileClassifier"/> class.
@@ -26,6 +32,7 @@ namespace ConsoleCompare
 		internal SimileClassifier(IClassificationTypeRegistryService registry)
 		{
 			simileErrorType = registry.GetClassificationType(SimileClassifications.SimileErrorClassifier);
+			simileCommentType = registry.GetClassificationType(SimileClassifications.SimileCommentClassifier);
 			simileInputTagType = registry.GetClassificationType(SimileClassifications.SimileInputTagClassifier);
 			simileNumericTagType = registry.GetClassificationType(SimileClassifications.SimileNumericTagClassifier);
 		}
@@ -57,38 +64,142 @@ namespace ConsoleCompare
 		/// <returns>A list of ClassificationSpans that represent spans identified to be of this classification.</returns>
 		public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span)
 		{
-			// Build the results up
+			// Build the results up as we go
 			List<ClassificationSpan> results = new List<ClassificationSpan>();
 
 			// Grab the overall text of this span
 			string text = span.GetText();
 
-			// Find all tag groups
-			int currentPosition = 0;
-			int tagStart = -1;
-			while ((tagStart = text.IndexOf(SimileParser.ElementTagStart, currentPosition)) >= 0)
+			// Is it a comment?
+			if (text.StartsWith(SimileParser.PrefaceComment))
 			{
-				// Found a start, move ahead and look for an end
-				currentPosition = tagStart + SimileParser.ElementTagStart.Length;
-				int tagEnd = text.IndexOf(SimileParser.ElementTagEnd, currentPosition);
-				if (tagEnd > tagStart)
-				{
-					// Found the next end, so we have a complete tag
-					int tagStartInSpan = span.Start + tagStart;
-					int tagLength = tagEnd - tagStart + SimileParser.ElementTagEnd.Length;
-					SnapshotSpan tagSpan = new SnapshotSpan(span.Snapshot, new Span(tagStartInSpan, tagLength));
-
-					// Create an add the classification
-					results.Add(new ClassificationSpan(tagSpan, simileNumericTagType));
-
-					// Remember this position
-					currentPosition = tagEnd + SimileParser.ElementTagEnd.Length;
-				}
-
+				// Whole line is a comment; add as a comment and return
+				results.Add(CreateTagSpan(span, 0, span.Length, simileCommentType));
+				return results;
 			}
 
-			// Return the list, which may be empty
+			// Loop through, character by character, looking for start tags
+			bool isError = false;
+			int numericTagCount = 0;
+			int numericTagsOpen = 0;
+			int numericTagStart = -1;
+			int inputTagCount = 0;
+			int inputTagsOpen = 0;
+			int inputTagStart = -1;
+			for (int i = 0; i < text.Length; i++)
+			{
+				// Does a tag start or end here?
+				if (ContainsAtIndex(text, SimileParser.NumericTagStart, i))
+				{
+					// New numeric tag starting
+					numericTagCount++;
+					numericTagsOpen++;
+					numericTagStart = i;
+				}
+				else if (ContainsAtIndex(text, SimileParser.NumericTagEnd, i))
+				{
+					// Numeric tag ending
+					numericTagsOpen--;
+
+					// If we're at zero, we've just finished a tag
+					if (numericTagsOpen == 0)
+					{
+						// Check the tag's validity
+						int numericTagEnd = i - numericTagStart + SimileParser.NumericTagEnd.Length;
+						string tag = text.Substring(numericTagStart, numericTagEnd);
+						bool validTag = SimileParser.ParseNumericTag(tag, null);
+
+						// Create the span either way, but color code based on validity
+						results.Add(CreateTagSpan(
+							span,
+							numericTagStart,
+							numericTagEnd,
+							validTag ? simileNumericTagType : simileErrorType));
+					}
+				}
+				else if (ContainsAtIndex(text, SimileParser.InputTagStart, i))
+				{
+					// New input tag starting
+					inputTagCount++;
+					inputTagsOpen++;
+					inputTagStart = i;
+
+				}
+				else if (ContainsAtIndex(text, SimileParser.InputTagEnd, i))
+				{
+					// Input tag ending
+					inputTagsOpen--;
+
+					// If we're at zero here, we've just finished a tag
+					if (inputTagsOpen == 0)
+					{
+						results.Add(CreateTagSpan(
+							span,
+							inputTagStart,
+							i - inputTagStart + SimileParser.InputTagEnd.Length,
+							simileInputTagType));
+					}
+				}
+
+				// Is anything invalid up to this point?
+				if (numericTagsOpen < 0 || // Ended before began
+					numericTagsOpen > 1 || // Double open symbols
+					inputTagsOpen < 0 || // Ended before began
+					inputTagsOpen > 1 || // Double open symbols
+					(inputTagCount == 1 && numericTagCount > 0)) // Input AND numeric tags together
+				{
+					isError = true;
+					break;
+				}
+			}
+
+			// Was there an error anywhere on the line?
+			if (isError)
+			{
+				// Wipe everything out and classify the whole line as an error
+				results.Clear();
+				results.Add(CreateTagSpan(span, 0, span.Length, simileErrorType));
+				return results;
+			}
+
+			// Return our list of classifications (which may be empty)
 			return results;
+		}
+
+		/// <summary>
+		/// Helper for creating a classification span
+		/// </summary>
+		/// <param name="span">The span upon which this is based</param>
+		/// <param name="localStart">The local start position, which will be added to the span's start</param>
+		/// <param name="length">The length of this new span</param>
+		/// <param name="type">The classification type of this span</param>
+		/// <returns>A new classification span</returns>
+		private ClassificationSpan CreateTagSpan(SnapshotSpan span, int localStart, int length, IClassificationType type)
+		{
+			return new ClassificationSpan(new SnapshotSpan(span.Snapshot, new Span(localStart + span.Start, length)), type);
+		}
+
+		/// <summary>
+		/// Determiens if the given string contains the given value starting at the specified index
+		/// </summary>
+		/// <param name="str">The string to search</param>
+		/// <param name="value">The string to look for</param>
+		/// <param name="index">The index to check</param>
+		/// <returns>True if the string contains the entire value starting at index, false otherwise</returns>
+		private bool ContainsAtIndex(string str, string value, int index)
+		{
+			int valOffset = 0;
+			while (
+				valOffset < value.Length &&
+				valOffset + index < str.Length &&
+				value[valOffset] == str[index])
+			{
+				valOffset++;
+				index++;
+			}
+
+			// Did we make it through the search value?
+			return valOffset == value.Length;
 		}
 
 		#endregion

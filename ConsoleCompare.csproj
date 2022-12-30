@@ -66,11 +66,6 @@
     <Compile Include="SimileClassifier.cs" />
     <Compile Include="SimileClassifications.cs" />
     <Compile Include="SimileClassifierProvider.cs" />
-    <Compile Include="SimileEditorWindow.cs" />
-    <Compile Include="SimileEditorWindowCommand.cs" />
-    <Compile Include="SimileEditorWindowControl.xaml.cs">
-      <DependentUpon>SimileEditorWindowControl.xaml</DependentUpon>
-    </Compile>
     <Compile Include="SimileMargin.cs" />
     <Compile Include="SimileMarginFactory.cs" />
     <Compile Include="SimileParser.cs" />
@@ -112,7 +107,6 @@
     <Content Include="Resources\Command.png" />
     <Content Include="Resources\CommandPackage.ico" />
     <Content Include="Resources\ResultsWindowCommand.png" />
-    <Content Include="Resources\SimileEditorWindowCommand.png" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
@@ -131,10 +125,6 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="ResultsWindowControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="SimileEditorWindowControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -37,7 +37,6 @@ namespace ConsoleCompare
 	[Guid(CommandPackage.PackageGuidString)]
 	[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
 	[ProvideToolWindow(typeof(ResultsWindow))]
-	[ProvideToolWindow(typeof(SimileEditorWindow))]
 	public sealed class CommandPackage : AsyncPackage
 	{
 		/// <summary>
@@ -72,7 +71,6 @@ namespace ConsoleCompare
 			await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 			await Command.InitializeAsync(this);
 		    await ResultsWindowCommand.InitializeAsync(this);
-		    await SimileEditorWindowCommand.InitializeAsync(this);
 		}
 
 		#endregion
