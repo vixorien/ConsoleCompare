@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Shell.TableManager;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using System;
@@ -23,18 +24,20 @@ namespace ConsoleCompare
 		private readonly IClassificationType simileInputTagType;
 		private readonly IClassificationType simileNumericTagType;
 
-		private ErrorListProvider errorListProvider;
+		private ITableManager errorTableManager;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SimileClassifier"/> class.
 		/// </summary>
 		/// <param name="registry">Classification registry.</param>
-		internal SimileClassifier(IClassificationTypeRegistryService registry)
+		internal SimileClassifier(IClassificationTypeRegistryService registry, ITableManager errorTableManager)
 		{
 			simileErrorType = registry.GetClassificationType(SimileClassifications.SimileErrorClassifier);
 			simileCommentType = registry.GetClassificationType(SimileClassifications.SimileCommentClassifier);
 			simileInputTagType = registry.GetClassificationType(SimileClassifications.SimileInputTagClassifier);
 			simileNumericTagType = registry.GetClassificationType(SimileClassifications.SimileNumericTagClassifier);
+
+			this.errorTableManager = errorTableManager;
 		}
 
 		#region IClassifier
