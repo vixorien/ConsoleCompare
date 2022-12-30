@@ -13,7 +13,7 @@ namespace ConsoleCompare
 	{
 		// Constants for display sizing
 		private const int sizeOpen = 200;
-		private const int sizeCollapsed = 20;
+		private const int sizeCollapsed = 25;
 
 		// Content details
 		private bool marginOpen;
@@ -53,16 +53,13 @@ namespace ConsoleCompare
 			{
 				Width = this.Width,
 				Height = this.Height,
+				Padding = contentCollapsed.Padding,
 				VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
 				HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
 				Background = new SolidColorBrush(Colors.Black),
 				Foreground = new SolidColorBrush(Colors.WhiteSmoke),
 				FontFamily = new FontFamily("Cascadia Code"),
-				Content =
-				"Simile File Syntax\n" +
-				"Regular Text (Output):\n" +
-				"Numeric Tags:\n" +
-				"Input Tags:\n"
+				Content = SimileParser.SimileSyntaxDetails
 			};
 
 			

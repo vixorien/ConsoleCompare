@@ -28,7 +28,8 @@ namespace ConsoleCompare
 	///     denoted inside double square brackets: [[ ]]'s 
 	///  - Several options exist for data validation (see below)
 	///  - Multiple options can be combined in a single [[ ]] with semicolons
-	///  - NOTE: non-newline lines do not support numeric tags, as they need to have a finite length
+	///  - Numeric tags CANNOT appear on a line with an input tag, 
+	///     as text before an input tag must have a finite length
 	///  
 	///  Syntax:
 	///  - type (required)
@@ -73,6 +74,53 @@ namespace ConsoleCompare
 		public const string NumericValueSetEnd = "}";
 		public const string InputTagStart = "{{";
 		public const string InputTagEnd = "}}";
+
+		public const string SimileSyntaxDetails =
+@"Simile File Syntax:
+
+ - Lines beginning with # are comments and are ignored.
+ - All other lines are processed as expected outline, including blank lines.
+ 
+ - Input tags:
+   - User input is represented by an input tag: a string between {{ }}'s.
+   - Examples: {{Hello there}} or {{12345}} or {{Jimmy}}.
+   - Input tags MUST appear at the end of a line or on a line by themselves.
+   - Input tags CANNOT appear on a line with a numeric tag (see below),
+      as text before an input tag must have a finite length.
+ 
+ - Numeric tags:
+   - Numeric data that needs to be parsed and checked for validity can be
+      denoted inside [[ ]]'s.
+   - Several options exist for data validation (see below).
+   - Multiple options can be combined in a single [[ ]] with semicolons.
+   - Multiple numeric tags may appear on the same line.
+   - Numeric tags CANNOT appear on a line with an input tag, 
+      as text before an input tag must have a finite length.
+   
+   - Numeric tag syntax:
+     - type (required)
+       - Types: byte, sbyte, short, ushort, int, uint, long, ulong, float, double, char
+       - Short names: b, sb, s, us, i, ui, l, ul, f, d, c
+       - Examples: [[t=s]] or [[type=s]] or [[t=short]] would be parsed as a short
+     
+     - min / max (optional)
+       - Inclusive minimum and/or inclusive maximum for parsed numeric value
+       - Values will be parsed in accordance with the type option
+       - Examples: [[t=int;min=-10]] or [[t=double;min=3.14159]] or [[t=double;max=99]] or [[t=sbyte;min=-5;max=5]]
+     
+     - value set (optional)
+       - A set of one or more expected values
+       - Values will be parsed in accordance with the type option
+       - Examples: [[t=int;v={1,2,3,4}]] or [[t=int;values={5,10,15,20}]] or [[t=short;v={88}]]
+     
+     - precision (optional)
+       - Rounds the results to the given precision for checking
+       - Must be an integer between 0-15 (inclusive)
+       - examples: [[precision=3]] or [[p=5]]
+
+   - Complex numeric tag examples:
+     - The circle has a radius of [[t=double;min=0;max=100;p=3]] inches.
+     - Player [[t=int;v={1,2,3,4}]] has a score of [[t=int;min=0]].";
 
 
 		/// <summary>
@@ -148,7 +196,7 @@ namespace ConsoleCompare
 			int inputElementCount = 0;
 			int textElementCount = 0;
 			int lastInputIndex = -1;
-			for(int i = 0; i < lineElements.Count; i++)
+			for (int i = 0; i < lineElements.Count; i++)
 			{
 				if (lineElements[i].StartsWith(InputTagStart))
 				{
@@ -172,11 +220,11 @@ namespace ConsoleCompare
 				throw new SimileParseException("Lines may have a maximum of one input tag", line, lineNumber);
 
 			// Cannot mix tags
-			if(inputElementCount == 1 && numericElementCount > 0)
+			if (inputElementCount == 1 && numericElementCount > 0)
 				throw new SimileParseException("Input tags may not appear on the same line as a numeric tag", line, lineNumber);
 
 			// Must be last element on a line
-			if(lastInputIndex >= 0 && lastInputIndex != lineElements.Count - 1)
+			if (lastInputIndex >= 0 && lastInputIndex != lineElements.Count - 1)
 				throw new SimileParseException("Input tags may only appear at the end of a line", line, lineNumber);
 
 			// We know that if there is an input element, it's alone or at the end of a line
@@ -310,7 +358,7 @@ namespace ConsoleCompare
 		private static string StripTag(string tag)
 		{
 			// Check input tag
-			if(tag.StartsWith(InputTagStart) && tag.EndsWith(InputTagEnd))
+			if (tag.StartsWith(InputTagStart) && tag.EndsWith(InputTagEnd))
 				return tag.Substring(InputTagStart.Length, tag.Length - InputTagStart.Length - InputTagEnd.Length);
 
 			// Check numeric tag
@@ -398,7 +446,7 @@ namespace ConsoleCompare
 			tag = StripTag(tag);
 
 			// Split into options
-			string[] allOptions = tag.Split(new string[]{ NumericOptionDelimeter }, StringSplitOptions.RemoveEmptyEntries);
+			string[] allOptions = tag.Split(new string[] { NumericOptionDelimeter }, StringSplitOptions.RemoveEmptyEntries);
 
 			// Process each option
 			SimileNumericType type = SimileNumericType.Unknown;
@@ -437,7 +485,7 @@ namespace ConsoleCompare
 					case "v":
 					case "values":
 						// Verify set has { }'s around the values
-						if (!pieces[1].StartsWith(NumericValueSetStart) || 
+						if (!pieces[1].StartsWith(NumericValueSetStart) ||
 							!pieces[1].EndsWith(NumericValueSetEnd))
 							return false;
 
@@ -471,7 +519,7 @@ namespace ConsoleCompare
 				case SimileNumericType.UnsignedLong: return CreateNumericElement<ulong>(type, min, max, values, precision, output);
 				case SimileNumericType.Float: return CreateNumericElement<float>(type, min, max, values, precision, output);
 				case SimileNumericType.Double: return CreateNumericElement<double>(type, min, max, values, precision, output);
-				
+
 				// Invalid type found
 				case SimileNumericType.Unknown:
 				default:
@@ -512,10 +560,10 @@ namespace ConsoleCompare
 				output?.AddNumericElement(num);
 				return true;
 			}
-			catch 
+			catch
 			{
 				// One of the casts failed, so the numeric element is invalid
-				return false; 
+				return false;
 			}
 		}
 

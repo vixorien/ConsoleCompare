@@ -95,10 +95,16 @@ namespace ConsoleCompare
 		/// <param name="e">Event args.</param>
 		private void Execute(object sender, EventArgs e)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
+			// Simply open the window
+			_ = this.package.JoinableTaskFactory.RunAsync(async delegate
+			{
+				ToolWindowPane window = await this.package.ShowToolWindowAsync(typeof(ResultsWindow), 0, true, this.package.DisposalToken);
+				if ((null == window) || (null == window.Frame))
+				{
+					throw new NotSupportedException("Cannot create tool window");
+				}
+			});
 
-			// Open the window - all other interactions happen there
-			OpenWindow();
 		}
 
 		/// <summary>
@@ -106,44 +112,5 @@ namespace ConsoleCompare
 		/// </summary>
 		public Microsoft.VisualStudio.Shell.IAsyncServiceProvider ServiceProviderPackage { get => package; }
 
-		// Opening the window programmatically
-		// From: https://stackoverflow.com/a/31120230
-		private ResultsWindow OpenWindow()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			ResultsWindow window = (ResultsWindow)this.package.FindToolWindow(typeof(ResultsWindow), 0, true); // True means: create if not found. 0 means there is only 1 instance of this tool window
-			if (window == null || window.Frame == null)
-				throw new NotSupportedException("ResultsWindow not found");
-
-			IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
-			ErrorHandler.ThrowOnFailure(windowFrame.Show());
-
-			return window;
-		}
-
-		// Opening the window programmatically if we don't have the package
-		// - Unnecessary, but just for our reference!
-		// From: https://stackoverflow.com/a/31120230
-		private void OpenWindowThroughUIShell()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			IVsUIShell vsUIShell = (IVsUIShell)Package.GetGlobalService(typeof(SVsUIShell));
-			Guid guid = typeof(ResultsWindow).GUID;
-
-			IVsWindowFrame windowFrame;
-
-			// Attempt to find the window
-			int result = vsUIShell.FindToolWindow((uint)__VSFINDTOOLWIN.FTW_fFindFirst, ref guid, out windowFrame);
-
-			// If that didn't work, make it
-			if(result != VSConstants.S_OK)
-				result = vsUIShell.FindToolWindow((uint)__VSFINDTOOLWIN.FTW_fForceCreate, ref guid, out windowFrame);
-
-			// As long as it's fine, show it
-			if (result == VSConstants.S_OK)
-				ErrorHandler.ThrowOnFailure(windowFrame.Show());
-		}
 	}
 }
