@@ -13,12 +13,13 @@ namespace ConsoleCompare
 	{
 		// Constants for display sizing
 		private const int sizeOpen = 200;
-		private const int sizeCollapsed = 25;
+		private const double fontSizeAdjust = 0.8;
 
 		// Content details
 		private bool marginOpen;
 		private Label contentCollapsed;
 		private ScrollViewer contentOpen;
+		private IWpfTextView textView;
 
 		// Required for Visual Studio margin details (part of the template - do not remove)
 		public const string MarginName = "SimileMargin";
@@ -26,18 +27,24 @@ namespace ConsoleCompare
 		// Required for IDisposable implementation
 		private bool isDisposed;
 
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SimileMargin"/> class for a given <paramref name="textView"/>.
 		/// </summary>
 		/// <param name="textView">The <see cref="IWpfTextView"/> to attach the margin to.</param>
 		public SimileMargin(IWpfTextView textView)
 		{
+			// Set up overall margin details
 			this.ClipToBounds = true;
 			this.Background = new SolidColorBrush(Colors.Black);
+			
+			// Save text view ref
+			this.textView = textView;
 
 			// Set up events
 			this.MouseUp += SimileMargin_MouseUp;
 			this.SizeChanged += SimileMargin_SizeChanged;
+			textView.ZoomLevelChanged += TextView_ZoomLevelChanged;
 
 			// Lable for when the margin is collapsed
 			contentCollapsed = new Label
@@ -62,12 +69,21 @@ namespace ConsoleCompare
 				Content = SimileParser.SimileSyntaxDetails
 			};
 
-			
+			// Add content to margin
 			this.Children.Add(contentCollapsed);
 			this.Children.Add(contentOpen);
 
-			// Set the initial state to closed (after creating labels!)
+			// Set the initial state to closed (after creating labels!) and adjust font sizes
 			SetMarginState(false);
+			UpdateFontSizes();
+		}
+
+		/// <summary>
+		/// Adjusts font sizes when the text view zoom level changes
+		/// </summary>
+		private void TextView_ZoomLevelChanged(object sender, ZoomLevelChangedEventArgs e)
+		{
+			UpdateFontSizes();
 		}
 
 		/// <summary>
@@ -88,7 +104,7 @@ namespace ConsoleCompare
 		{
 			// Save new state and update accordingly
 			marginOpen = open;
-			this.Height = marginOpen ? sizeOpen : sizeCollapsed;
+			this.Height = marginOpen ? sizeOpen : CalculateCollapsedMarginHeight();
 
 			// Flip flop the content visibility, too
 			if (marginOpen)
@@ -101,6 +117,37 @@ namespace ConsoleCompare
 				contentOpen.Visibility = Visibility.Collapsed;
 				contentCollapsed.Visibility = Visibility.Visible;
 			}
+		}
+
+		/// <summary>
+		/// Updates the font sizes of the margin contents and, if necessary,
+		/// adjusts the collapsed margin's height
+		/// </summary>
+		private void UpdateFontSizes()
+		{
+			// Set the font sizes based on the text view
+			double zoomAdjust = textView.ZoomLevel / 100.0;
+			contentOpen.FontSize = textView.LineHeight * fontSizeAdjust * zoomAdjust;
+			contentCollapsed.FontSize = textView.LineHeight * fontSizeAdjust * zoomAdjust;
+
+			// Adjust collapsed height, too
+			if (!marginOpen)
+			{
+				this.Height = CalculateCollapsedMarginHeight();
+			}
+		}
+
+		/// <summary>
+		/// Calculates the size of the collapsed margin based on current zoom level
+		/// </summary>
+		/// <returns>The desired height of the collapsed margin</returns>
+		private double CalculateCollapsedMarginHeight()
+		{
+			double zoomAdjust = textView.ZoomLevel / 100.0;
+			return 
+				textView.LineHeight * zoomAdjust + 
+				contentCollapsed.Padding.Top + 
+				contentCollapsed.Padding.Bottom;
 		}
 
 		/// <summary>

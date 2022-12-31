@@ -66,6 +66,9 @@
     <Compile Include="SimileClassifier.cs" />
     <Compile Include="SimileClassifications.cs" />
     <Compile Include="SimileClassifierProvider.cs" />
+    <Compile Include="SimileErrorSinkManager.cs" />
+    <Compile Include="SimileErrorSnapshot.cs" />
+    <Compile Include="SimileErrorSource.cs" />
     <Compile Include="SimileMargin.cs" />
     <Compile Include="SimileMarginFactory.cs" />
     <Compile Include="SimileParser.cs" />
@@ -101,6 +104,7 @@
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

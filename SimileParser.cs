@@ -12,56 +12,6 @@ namespace ConsoleCompare
 	/// <summary>
 	/// Helper class for parsing a ConsoleSimile from an array of lines
 	/// </summary>
-	/// <remarks>
-	///  Line notation:
-	///  - Lines beginning with # are ignored as comments
-	///  - All other lines are processed as expected output, including blank lines
-	/// 
-	///  - Input tags:
-	///    - User input is represented by an input tag: a string between {{ }}'s
-	///    - Examples: {{Hello there}} or {{12345}} or {{Jimmy}}
-	///    - Input tags MUST appear at the end of a line
-	///    - Input tags CANNOT appear on a line with a numeric tag (see below)
-	/// 
-	///  Numeric tags:
-	///  - Numeric data that needs to be parsed and checked for validity can be
-	///     denoted inside double square brackets: [[ ]]'s 
-	///  - Several options exist for data validation (see below)
-	///  - Multiple options can be combined in a single [[ ]] with semicolons
-	///  - Numeric tags CANNOT appear on a line with an input tag, 
-	///     as text before an input tag must have a finite length
-	///  
-	///  Syntax:
-	///  - type (required)
-	///    - supported types: byte, sbyte, short, ushort, int, uint, long, ulong, float, double, char
-	///    - short names: b, sb, s, us, i, ui, l, ul, f, d, c
-	///    - examples: [[t=s]] or [[type=s]] or [[t=short]] would expect a short
-	/// 
-	///  - min / max (optional)
-	///    - inclusive minimum and/or inclusive maximum for parsed numeric value
-	///    - examples: [[min=-10]] or [[min=3.14159]] or [[min=1979]] or [[max=99]] or [[min=-5;max=5]]
-	/// 
-	///  - value set (optional)
-	///    - a set of one or more expected values
-	///    - examples: [[v={1,2,3,4}]] or [[values={5,10,15,20}]] or [[v={88}]]
-	/// 
-	///  - precision (optional)
-	///    - Acceptable precision bounds (mostly for floating point rounding errors)
-	///    - Must be an integer between 0-15 (inclusive)
-	///    - Rounds the results to the given precision for checking
-	///    - examples: [[precision=3]] or [[p=5]]
-	/// </remarks>
-	/// <example>
-	/// # This line is a comment
-	/// Hello, World!
-	/// What is your name? {{Chris}}
-	/// Hello, Chris!
-	/// 
-	/// What is your age? {{7}}
-	/// You are 7 years old?  That's over [[type=int]] days!
-	///
-	/// Thank you for playing
-	/// </example>
 	internal static class SimileParser
 	{
 		// Parsing details
@@ -76,19 +26,19 @@ namespace ConsoleCompare
 		public const string InputTagEnd = "}}";
 
 		public const string SimileSyntaxDetails =
-@"Simile File Syntax:
+@"== Simile File Syntax ==
 
  - Lines beginning with # are comments and are ignored.
- - All other lines are processed as expected outline, including blank lines.
+ - All other lines are processed as expected program output, including blank lines.
  
- - Input tags:
-   - User input is represented by an input tag: a string between {{ }}'s.
+ == Input Tags ==
+   - User input fed into the program is represented by a string between {{ }}'s.
    - Examples: {{Hello there}} or {{12345}} or {{Jimmy}}.
    - Input tags MUST appear at the end of a line or on a line by themselves.
    - Input tags CANNOT appear on a line with a numeric tag (see below),
       as text before an input tag must have a finite length.
  
- - Numeric tags:
+ == Numeric Tags ==
    - Numeric data that needs to be parsed and checked for validity can be
       denoted inside [[ ]]'s.
    - Several options exist for data validation (see below).
@@ -97,9 +47,9 @@ namespace ConsoleCompare
    - Numeric tags CANNOT appear on a line with an input tag, 
       as text before an input tag must have a finite length.
    
-   - Numeric tag syntax:
+   == Numeric Tag Syntax ==
      - type (required)
-       - Types: byte, sbyte, short, ushort, int, uint, long, ulong, float, double, char
+       - Supported data types: byte, sbyte, short, ushort, int, uint, long, ulong, float, double, char
        - Short names: b, sb, s, us, i, ui, l, ul, f, d, c
        - Examples: [[t=s]] or [[type=s]] or [[t=short]] would be parsed as a short
      
@@ -115,10 +65,11 @@ namespace ConsoleCompare
      
      - precision (optional)
        - Rounds the results to the given precision for checking
-       - Must be an integer between 0-15 (inclusive)
-       - examples: [[precision=3]] or [[p=5]]
+       - Value must be an integer between 0-15 (inclusive)
+       - Only used if overall data type is float or double
+       - examples: [[t=double;precision=3]] or [[t=d;p=5]]
 
-   - Complex numeric tag examples:
+   == Complex Numeric Tag Examples ==
      - The circle has a radius of [[t=double;min=0;max=100;p=3]] inches.
      - Player [[t=int;v={1,2,3,4}]] has a score of [[t=int;min=0]].";
 

@@ -24,20 +24,18 @@ namespace ConsoleCompare
 		private readonly IClassificationType simileInputTagType;
 		private readonly IClassificationType simileNumericTagType;
 
-		private ITableManager errorTableManager;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SimileClassifier"/> class.
 		/// </summary>
 		/// <param name="registry">Classification registry.</param>
-		internal SimileClassifier(IClassificationTypeRegistryService registry, ITableManager errorTableManager)
+		internal SimileClassifier(IClassificationTypeRegistryService registry)
 		{
 			simileErrorType = registry.GetClassificationType(SimileClassifications.SimileErrorClassifier);
 			simileCommentType = registry.GetClassificationType(SimileClassifications.SimileCommentClassifier);
 			simileInputTagType = registry.GetClassificationType(SimileClassifications.SimileInputTagClassifier);
 			simileNumericTagType = registry.GetClassificationType(SimileClassifications.SimileNumericTagClassifier);
 
-			this.errorTableManager = errorTableManager;
 		}
 
 		#region IClassifier
@@ -61,7 +59,6 @@ namespace ConsoleCompare
 		/// </summary>
 		/// <remarks>
 		/// This method scans the given SnapshotSpan for potential matches for this classification.
-		/// In this instance, it classifies everything and returns each span as a new ClassificationSpan.
 		/// </remarks>
 		/// <param name="span">The span currently being classified.</param>
 		/// <returns>A list of ClassificationSpans that represent spans identified to be of this classification.</returns>
@@ -159,6 +156,16 @@ namespace ConsoleCompare
 			// Was there an error anywhere on the line?
 			if (isError)
 			{
+				SimileErrorSource.Instance.AddError(
+					new SimileErrorSnapshot(
+						new SimileError()
+						{
+							Text = "Error text here",
+							DocumentName = "Document name here",
+							LineNumber = -1
+						}
+					));
+
 				// Wipe everything out and classify the whole line as an error
 				results.Clear();
 				results.Add(CreateTagSpan(span, 0, span.Length, simileErrorType));
