@@ -14,7 +14,6 @@ namespace ConsoleCompare
 	internal class SimileErrorSource : ITableDataSource
 	{
 		private List<SimileErrorSinkManager> sinks;
-		private List<SimileErrorSnapshot> errorSnapshots;
 
 		[Import]
 		private ITableManagerProvider TableManagerProvider { get; set; }
@@ -35,7 +34,6 @@ namespace ConsoleCompare
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			sinks = new List<SimileErrorSinkManager>();
-			errorSnapshots = new List<SimileErrorSnapshot>();
 
 			// Microsoft ref: https://github.com/microsoft/VSSDK-Extensibility-Samples/tree/master/ErrorList
 			// Ref: https://github.com/madskristensen/WebAccessibilityChecker/tree/master/src/ErrorList
@@ -53,17 +51,18 @@ namespace ConsoleCompare
 				StandardTableColumnDefinitions.DocumentName);
 		}
 
-		public void AddErrorSnapshot(SimileErrorSnapshot snapshot)
+		public void AddErrors(List<SimileError> errors)
 		{
-			// Add an error to our list and update sinks
-			errorSnapshots.Add(snapshot);
-			UpdateSinkManagers();
+			// Give the error to all sinks
+			foreach (SimileErrorSinkManager sink in sinks)
+				sink.AddErrors(errors);
+
 		}
 
-		public void RemoveErrorSnapshot(SimileErrorSnapshot snapshot)
+		public void RemoveErrors(List<SimileError> errors)
 		{
-			errorSnapshots.Remove(snapshot);
-			UpdateSinkManagers();
+			foreach (SimileErrorSinkManager sink in sinks)
+				sink.RemoveErrors(errors);
 		}
 
 		public void ClearErrors()
@@ -88,7 +87,6 @@ namespace ConsoleCompare
 		{
 			foreach (SimileErrorSinkManager sink in sinks)
 			{
-				sink.UpdateSink(errorSnapshots);
 			}
 		}
 

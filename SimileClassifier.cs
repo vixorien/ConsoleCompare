@@ -64,10 +64,6 @@ namespace ConsoleCompare
 		/// <returns>A list of ClassificationSpans that represent spans identified to be of this classification.</returns>
 		public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span)
 		{
-			// Clear the error list and create a single error snapshot
-			SimileErrorSource.Instance.ClearErrors();
-			SimileErrorSnapshot errorSnapshot = new SimileErrorSnapshot();
-
 			// Grab possible error details
 			int lineNumber = span.Snapshot.GetLineNumberFromPosition(span.Start);
 			string filename = GetDocumentFilename(span.Snapshot);
@@ -126,13 +122,13 @@ namespace ConsoleCompare
 
 						if (!validTag)
 						{
-							errorSnapshot.AddError(
-								new SimileError()
-								{
-									DocumentName = filename,
-									Text = "Error with numeric tag",
-									LineNumber = lineNumber
-								});
+							//errorSnapshot.AddError(
+							//	new SimileError()
+							//	{
+							//		DocumentName = filename,
+							//		Text = "Error with numeric tag",
+							//		LineNumber = lineNumber
+							//	});
 						}
 					}
 				}
@@ -175,13 +171,13 @@ namespace ConsoleCompare
 			// Was there an error anywhere on the line?
 			if (isError)
 			{
-				SimileError error = new SimileError()
-				{
-					Text = "NEED ERROR DETAILS",
-					DocumentName = filename,
-					LineNumber = lineNumber
-				};
-				errorSnapshot.AddError(error);
+				//SimileError error = new SimileError()
+				//{
+				//	Text = "NEED ERROR DETAILS",
+				//	DocumentName = filename,
+				//	LineNumber = lineNumber
+				//};
+				//errorSnapshot.AddError(error);
 
 				// Classify the whole line as an error
 				results.Add(CreateTagSpan(span, 0, span.Length, simileErrorType));
