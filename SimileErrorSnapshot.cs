@@ -14,12 +14,13 @@ namespace ConsoleCompare
 	// TODO: Look into just making the error an ITableEntry which can
 	// directly be given to a table sink (rather than making a snapshot)
 
-	internal class SimileError
+	internal class SimileError : ITableEntry
 	{
 		// Add error details here
 		public string Text { get; set; }
 		public string DocumentName { get; set; }
 		public int LineNumber { get; set; }
+
 
 		public static bool operator ==(SimileError thisError, SimileError otherError)
 		{
@@ -53,6 +54,83 @@ namespace ConsoleCompare
 		{
 			return DocumentName + ":" + LineNumber + ":" + Text;
 		}
+
+
+		#region ITableEntry Members
+
+		/// <summary>
+		/// Unique identifier used to compare entries.  Since we've
+		/// overridden .Equals(), the whole object should work here.
+		/// </summary>
+		public object Identity => this;
+
+
+		public bool TryGetValue(string keyName, out object content)
+		{
+			switch (keyName)
+			{
+				case StandardTableKeyNames.DocumentName:
+					content = DocumentName;
+					return true;
+
+				case StandardTableKeyNames.Text:
+					content = Text;
+					return true;
+
+				case StandardTableKeyNames.Line:
+					content = LineNumber;
+					return true;
+
+				default:
+					content = null;
+					return false;
+			}
+		}
+
+		public bool TrySetValue(string keyName, object content)
+		{
+			switch (keyName)
+			{
+				case StandardTableKeyNames.DocumentName:
+					if (content is string docName)
+					{
+						DocumentName = docName;
+						return true;
+					}
+					return false;
+
+				case StandardTableKeyNames.Text:
+					if (content is string text)
+					{
+						Text = text;
+						return true;
+					}
+					return false;
+
+				case StandardTableKeyNames.Line:
+					if (content is int line)
+					{
+						LineNumber = line;
+						return true;
+					}
+					return false;
+
+				default: return false;
+			}
+		}
+
+		public bool CanSetValue(string keyName)
+		{
+			switch (keyName)
+			{
+				case StandardTableKeyNames.DocumentName: return true;
+				case StandardTableKeyNames.Text: return true;
+				case StandardTableKeyNames.Line: return true;
+				default: return false;
+			}
+		} 
+
+		#endregion
 	}
 
 	internal class SimileErrorSnapshot : WpfTableEntriesSnapshotBase
