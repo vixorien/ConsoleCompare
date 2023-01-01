@@ -27,9 +27,13 @@ namespace ConsoleCompare
 
 		public override int VersionNumber => 1;
 
-		public SimileErrorSnapshot(SimileError error)
+		public SimileErrorSnapshot()
 		{
 			errors = new List<SimileError>();
+		}
+
+		public void AddError(SimileError error)
+		{
 			errors.Add(error);
 		}
 
@@ -53,10 +57,8 @@ namespace ConsoleCompare
 					return true;
 
 				case StandardTableKeyNames.Line:
-					content = error.LineNumber.ToString();
+					content = error.LineNumber;
 					return true;
-
-				// TODO: MORE CASES
 
 				default:
 					content = null;

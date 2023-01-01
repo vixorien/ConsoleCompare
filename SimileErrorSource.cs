@@ -37,16 +37,14 @@ namespace ConsoleCompare
 			sinks = new List<SimileErrorSinkManager>();
 			errorSnapshots = new List<SimileErrorSnapshot>();
 
+			// Microsoft ref: https://github.com/microsoft/VSSDK-Extensibility-Samples/tree/master/ErrorList
 			// Ref: https://github.com/madskristensen/WebAccessibilityChecker/tree/master/src/ErrorList
-			// Before we can add a source, this class needs to implement ITableDataSource - This class can hold all of the "error snapshots"
-			// Then we need a sinkmanager?  Which will hold (but not implement) an ITableDataSink
-			// Then we need something that implements WpfTableEntriesSnapshotBase to act as our "error snapshots"
-			// And then...?
 
 			// Ensure our imports are complete before moving on
 			IComponentModel compositionService = ServiceProvider.GlobalProvider.GetService(typeof(SComponentModel)) as IComponentModel;
 			compositionService?.DefaultCompositionService.SatisfyImportsOnce(this);
 
+			// Set this class up as a source for the error table
 			ITableManager table = TableManagerProvider.GetTableManager(StandardTables.ErrorsTable);
 			table.AddSource(
 				this,

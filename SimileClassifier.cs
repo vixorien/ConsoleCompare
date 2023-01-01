@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 // Details on overall classifier setup: https://stackoverflow.com/a/37602798
 // Options for adding errors to error list: https://stackoverflow.com/a/59608426
@@ -24,18 +25,39 @@ namespace ConsoleCompare
 		private readonly IClassificationType simileInputTagType;
 		private readonly IClassificationType simileNumericTagType;
 
+		private ITextBuffer textBuffer;
+
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SimileClassifier"/> class.
 		/// </summary>
 		/// <param name="registry">Classification registry.</param>
-		internal SimileClassifier(IClassificationTypeRegistryService registry)
+		internal SimileClassifier(IClassificationTypeRegistryService registry, ITextBuffer buffer)
 		{
 			simileErrorType = registry.GetClassificationType(SimileClassifications.SimileErrorClassifier);
 			simileCommentType = registry.GetClassificationType(SimileClassifications.SimileCommentClassifier);
 			simileInputTagType = registry.GetClassificationType(SimileClassifications.SimileInputTagClassifier);
 			simileNumericTagType = registry.GetClassificationType(SimileClassifications.SimileNumericTagClassifier);
 
+			textBuffer = buffer;
+			textBuffer.ChangedLowPriority += TextBuffer_ChangedLowPriority;
+		}
+
+		/// <summary>
+		/// Occurs whenever the text buffer changes (low priority)
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void TextBuffer_ChangedLowPriority(object sender, TextContentChangedEventArgs e)
+		{
+			// TODO: Handle error parsing here!
+			// This gives us a single location to remove/add errors after a full parse
+			// This is necessary because classifications happen on a per-line basis,
+			//  which means we don't know when to clear all the errors / update them
+
+			// Note: May need to hook this up to something that notifies us when
+			// the view is closed so we can remove this event listener
+			// See: https://github.com/microsoft/VSSDK-Extensibility-Samples/blob/master/ErrorList/C%23/SpellChecker.cs
 		}
 
 		#region IClassifier
@@ -64,6 +86,14 @@ namespace ConsoleCompare
 		/// <returns>A list of ClassificationSpans that represent spans identified to be of this classification.</returns>
 		public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span)
 		{
+			// Clear the error list and create a single error snapshot
+			SimileErrorSource.Instance.ClearErrors();
+			SimileErrorSnapshot errorSnapshot = new SimileErrorSnapshot();
+
+			// Grab possible error details
+			int lineNumber = span.Snapshot.GetLineNumberFromPosition(span.Start);
+			string filename = GetDocumentFilename(span.Snapshot);
+
 			// Build the results up as we go
 			List<ClassificationSpan> results = new List<ClassificationSpan>();
 
@@ -115,6 +145,17 @@ namespace ConsoleCompare
 							numericTagStart,
 							numericTagEnd,
 							validTag ? simileNumericTagType : simileErrorType));
+
+						if (!validTag)
+						{
+							errorSnapshot.AddError(
+								new SimileError()
+								{
+									DocumentName = filename,
+									Text = "Error with numeric tag",
+									LineNumber = lineNumber
+								});
+						}
 					}
 				}
 				else if (ContainsAtIndex(text, SimileParser.InputTagStart, i))
@@ -156,23 +197,20 @@ namespace ConsoleCompare
 			// Was there an error anywhere on the line?
 			if (isError)
 			{
-				SimileErrorSource.Instance.AddError(
-					new SimileErrorSnapshot(
-						new SimileError()
-						{
-							Text = "Error text here",
-							DocumentName = "Document name here",
-							LineNumber = -1
-						}
-					));
+				SimileError error = new SimileError()
+				{
+					Text = "NEED ERROR DETAILS",
+					DocumentName = filename,
+					LineNumber = lineNumber
+				};
+				errorSnapshot.AddError(error);
 
-				// Wipe everything out and classify the whole line as an error
-				results.Clear();
+				// Classify the whole line as an error
 				results.Add(CreateTagSpan(span, 0, span.Length, simileErrorType));
-				return results;
 			}
 
 			// Return our list of classifications (which may be empty)
+			SimileErrorSource.Instance.AddError(errorSnapshot);
 			return results;
 		}
 
@@ -210,6 +248,30 @@ namespace ConsoleCompare
 
 			// Did we make it through the search value?
 			return valOffset == value.Length;
+		}
+
+
+		private string GetDocumentFilename(ITextSnapshot snapshot)
+		{
+			// Grab the full path and strip down to filename
+			string path = GetDocumentPath(snapshot);
+			if (!string.IsNullOrEmpty(path))
+				return Path.GetFileName(path);
+
+			// Path/filename not found
+			return null;
+		}
+
+
+		private string GetDocumentPath(ITextSnapshot snapshot)
+		{
+			// Attempt to get the text document from the snapshot and return the filepath
+			ITextDocument doc = null;
+			if (snapshot.TextBuffer.Properties.TryGetProperty(typeof(ITextDocument), out doc) && doc != null)
+				return doc.FilePath;
+
+			// Unable to find text document
+			return null;
 		}
 
 		#endregion

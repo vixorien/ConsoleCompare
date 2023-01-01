@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 using System.ComponentModel.Composition;
+using System.Windows;
 using System.Windows.Media;
 
 namespace ConsoleCompare
@@ -54,6 +55,14 @@ namespace ConsoleCompare
 			{
 				this.DisplayName = "Simile Error"; // Human readable version of the name
 				this.BackgroundColor = ErrorBackgroundColor;
+
+				// Red dashed underline example
+				//TextDecoration redUnderline = new TextDecoration();
+				//redUnderline.Pen = new Pen(Brushes.Red, 1);
+				//redUnderline.Pen.DashStyle = DashStyles.Dash;
+				//redUnderline.PenThicknessUnit = TextDecorationUnit.FontRecommended;
+				//this.TextDecorations = new TextDecorationCollection();
+				//this.TextDecorations.Add(redUnderline);
 			}
 		}
 
