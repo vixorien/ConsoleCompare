@@ -69,6 +69,7 @@
     <Compile Include="SimileErrorSinkManager.cs" />
     <Compile Include="SimileErrorSnapshot.cs" />
     <Compile Include="SimileErrorSource.cs" />
+    <Compile Include="SimileErrorTextViewListener.cs" />
     <Compile Include="SimileMargin.cs" />
     <Compile Include="SimileMarginFactory.cs" />
     <Compile Include="SimileParser.cs" />

@@ -11,12 +11,48 @@ using System.Threading.Tasks;
 
 namespace ConsoleCompare
 {
+	// TODO: Look into just making the error an ITableEntry which can
+	// directly be given to a table sink (rather than making a snapshot)
+
 	internal class SimileError
 	{
 		// Add error details here
 		public string Text { get; set; }
 		public string DocumentName { get; set; }
 		public int LineNumber { get; set; }
+
+		public static bool operator ==(SimileError thisError, SimileError otherError)
+		{
+			return
+				thisError.Text == otherError.Text &&
+				thisError.DocumentName == otherError.DocumentName &&
+				thisError.LineNumber == otherError.LineNumber;
+		}
+
+		public static bool operator !=(SimileError thisError, SimileError otherError)
+		{
+			return !(thisError == otherError);
+		}
+
+		public override bool Equals(object obj)
+		{
+			// If it's another error, compare
+			if (obj is SimileError otherError)
+				return this == otherError;
+
+			// Not an error, so cannot be equivalent
+			return false;
+		}
+
+		public override int GetHashCode()
+		{
+			return ToString().GetHashCode();
+		}
+
+		public override string ToString()
+		{
+			return DocumentName + ":" + LineNumber + ":" + Text;
+		}
 	}
 
 	internal class SimileErrorSnapshot : WpfTableEntriesSnapshotBase
@@ -34,7 +70,13 @@ namespace ConsoleCompare
 
 		public void AddError(SimileError error)
 		{
-			errors.Add(error);
+			if(!errors.Contains(error))
+				errors.Add(error);
+		}
+
+		public void ClearErrors()
+		{
+			errors.Clear();
 		}
 
 		public override bool TryGetValue(int index, string keyName, out object content)

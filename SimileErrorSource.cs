@@ -53,10 +53,16 @@ namespace ConsoleCompare
 				StandardTableColumnDefinitions.DocumentName);
 		}
 
-		public void AddError(SimileErrorSnapshot error)
+		public void AddErrorSnapshot(SimileErrorSnapshot snapshot)
 		{
 			// Add an error to our list and update sinks
-			errorSnapshots.Add(error);
+			errorSnapshots.Add(snapshot);
+			UpdateSinkManagers();
+		}
+
+		public void RemoveErrorSnapshot(SimileErrorSnapshot snapshot)
+		{
+			errorSnapshots.Remove(snapshot);
 			UpdateSinkManagers();
 		}
 

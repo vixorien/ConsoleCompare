@@ -25,39 +25,17 @@ namespace ConsoleCompare
 		private readonly IClassificationType simileInputTagType;
 		private readonly IClassificationType simileNumericTagType;
 
-		private ITextBuffer textBuffer;
-
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SimileClassifier"/> class.
 		/// </summary>
 		/// <param name="registry">Classification registry.</param>
-		internal SimileClassifier(IClassificationTypeRegistryService registry, ITextBuffer buffer)
+		internal SimileClassifier(IClassificationTypeRegistryService registry)
 		{
 			simileErrorType = registry.GetClassificationType(SimileClassifications.SimileErrorClassifier);
 			simileCommentType = registry.GetClassificationType(SimileClassifications.SimileCommentClassifier);
 			simileInputTagType = registry.GetClassificationType(SimileClassifications.SimileInputTagClassifier);
 			simileNumericTagType = registry.GetClassificationType(SimileClassifications.SimileNumericTagClassifier);
-
-			textBuffer = buffer;
-			textBuffer.ChangedLowPriority += TextBuffer_ChangedLowPriority;
-		}
-
-		/// <summary>
-		/// Occurs whenever the text buffer changes (low priority)
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void TextBuffer_ChangedLowPriority(object sender, TextContentChangedEventArgs e)
-		{
-			// TODO: Handle error parsing here!
-			// This gives us a single location to remove/add errors after a full parse
-			// This is necessary because classifications happen on a per-line basis,
-			//  which means we don't know when to clear all the errors / update them
-
-			// Note: May need to hook this up to something that notifies us when
-			// the view is closed so we can remove this event listener
-			// See: https://github.com/microsoft/VSSDK-Extensibility-Samples/blob/master/ErrorList/C%23/SpellChecker.cs
 		}
 
 		#region IClassifier
@@ -210,7 +188,7 @@ namespace ConsoleCompare
 			}
 
 			// Return our list of classifications (which may be empty)
-			SimileErrorSource.Instance.AddError(errorSnapshot);
+		//	SimileErrorSource.Instance.AddError(errorSnapshot);
 			return results;
 		}
 

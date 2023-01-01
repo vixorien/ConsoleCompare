@@ -30,7 +30,7 @@ namespace ConsoleCompare
 		public void UpdateSink(IEnumerable<SimileErrorSnapshot> newSnapshots)
 		{
 			// Should we clear first?
-			Clear();
+			//Clear();
 
 			foreach (SimileErrorSnapshot newSnap in newSnapshots)
 			{

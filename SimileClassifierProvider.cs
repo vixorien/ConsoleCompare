@@ -36,7 +36,7 @@ namespace ConsoleCompare
 		/// <returns>A classifier for the text buffer, or null if the provider cannot do so in its current state.</returns>
 		public IClassifier GetClassifier(ITextBuffer buffer)
 		{
-			return buffer.Properties.GetOrCreateSingletonProperty<SimileClassifier>(creator: () => new SimileClassifier(this.classificationRegistry, buffer));
+			return buffer.Properties.GetOrCreateSingletonProperty<SimileClassifier>(creator: () => new SimileClassifier(this.classificationRegistry));
 		}
 
 		#endregion
