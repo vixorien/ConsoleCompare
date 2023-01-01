@@ -145,7 +145,7 @@ namespace ConsoleCompare
 			OpenFileDialog open = new OpenFileDialog();
 			open.InitialDirectory = capture.FindPathToProjectFolder();
 			open.Filter = "Console Compare Simile Files|*.simile";
-
+			
 			// Show and check result
 			bool? result = open.ShowDialog();
 			if (result.HasValue && result.Value == true)

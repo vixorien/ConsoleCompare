@@ -1,21 +1,14 @@
-﻿# This is an example output file
-# Lines starting with '#' are comments
-
-# Blank lines are completely ignored
-
-# Actual data starts here:
-.Hello, World!
-.0
-.1
-.2
-.3
-.4
-.5
-.6
-.7
-.8
-.9
-;What is your name?
->Chris
-.Hello, Chris!
-.This line has a number [[type=int]] here
+﻿# Example simile file
+# - Lines starting with '#' are comments
+# - All other lines represent a mix of expected
+#   console input and/or output, including blank lines
+#
+# Input Tags
+# - Console input is defined inside input tags: {{ }}
+# - Input tags must be at the end of a line
+# - Input tags cannot appear on the same line as numeric tags
+#
+# Numeric Tags
+# - Use [[ ]]'s to define parsable numeric output
+#
+Hello, world!

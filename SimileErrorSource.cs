@@ -25,7 +25,7 @@ namespace ConsoleCompare
 		private static SimileErrorSource instance;
 		public static SimileErrorSource Instance
 		{
-			get => instance == null ? instance = new SimileErrorSource() : instance;
+			get => instance ?? (instance = new SimileErrorSource());
 		}
 		#endregion
 
@@ -53,7 +53,8 @@ namespace ConsoleCompare
 				StandardTableColumnDefinitions.Line,
 				StandardTableColumnDefinitions.Text,
 				StandardTableColumnDefinitions.Column,
-				StandardTableColumnDefinitions.DocumentName);
+				StandardTableColumnDefinitions.DocumentName,
+				StandardTableColumnDefinitions.ErrorSeverity);
 		}
 
 		/// <summary>
@@ -64,8 +65,7 @@ namespace ConsoleCompare
 		public void ClearErrorSnapshot(ITextBuffer buffer, int lineNumber)
 		{
 			// If this buffer doesn't exist, do nothing
-			List<SimileErrorSnapshot> errorList = null;
-			if (!liveBufferErrors.TryGetValue(buffer, out errorList) || 
+			if (!liveBufferErrors.TryGetValue(buffer, out List<SimileErrorSnapshot> errorList) || 
 				lineNumber >= errorList.Count)
 				return;
 
@@ -82,8 +82,7 @@ namespace ConsoleCompare
 		public void AddErrorSnapshot(ITextBuffer buffer, int lineNumber, SimileErrorSnapshot snapshot)
 		{
 			// If this buffer doesn't exist, do nothing
-			List<SimileErrorSnapshot> errorList = null;
-			if (!liveBufferErrors.TryGetValue(buffer, out errorList))
+			if (!liveBufferErrors.TryGetValue(buffer, out List<SimileErrorSnapshot> errorList))
 				return;
 
 			// Buffer exists, so put the snapshot into the list in the proper location
@@ -103,8 +102,7 @@ namespace ConsoleCompare
 		public void VerifyBufferLength(ITextBuffer buffer)
 		{
 			// If this buffer doesn't exist, do nothing
-			List<SimileErrorSnapshot> errorList = null;
-			if (!liveBufferErrors.TryGetValue(buffer, out errorList))
+			if (!liveBufferErrors.TryGetValue(buffer, out List<SimileErrorSnapshot> errorList))
 				return;
 
 			// If the actual line count is less than what we've been tracking,

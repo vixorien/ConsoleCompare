@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell.TableControl;
 using Microsoft.VisualStudio.Shell.TableManager;
 using System;
@@ -14,11 +15,16 @@ namespace ConsoleCompare
 
 	internal class SimileError
 	{
-		// Add error details here
 		public string Text { get; set; }
 		public string DocumentName { get; set; }
 		public int LineNumber { get; set; }
 		public int ColumnNumber { get; set; }
+
+		/// <summary>
+		/// Gets the error severity category, which currently is always an error
+		/// (instead of a warning or info message)
+		/// </summary>
+		public __VSERRORCATEGORY ErrorSeverity => __VSERRORCATEGORY.EC_ERROR;
 
 
 		public static bool operator ==(SimileError thisError, SimileError otherError)
@@ -105,6 +111,10 @@ namespace ConsoleCompare
 
 				case StandardTableKeyNames.Column:
 					content = error.ColumnNumber;
+					return true;
+
+				case StandardTableKeyNames.ErrorSeverity:
+					content = error.ErrorSeverity;
 					return true;
 
 				default:

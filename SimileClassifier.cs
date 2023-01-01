@@ -309,8 +309,7 @@ namespace ConsoleCompare
 		private string GetDocumentPath(ITextSnapshot snapshot)
 		{
 			// Attempt to get the text document from the snapshot and return the filepath
-			ITextDocument doc = null;
-			if (snapshot.TextBuffer.Properties.TryGetProperty(typeof(ITextDocument), out doc) && doc != null)
+			if (snapshot.TextBuffer.Properties.TryGetProperty(typeof(ITextDocument), out ITextDocument doc) && doc != null)
 				return doc.FilePath;
 
 			// Unable to find text document
