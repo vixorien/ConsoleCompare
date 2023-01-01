@@ -19,20 +19,19 @@ namespace ConsoleCompare
 			errorSource.AddSinkManager(this);
 		}
 
-		public void AddErrors(List<SimileError> errors)
+		public void AddErrorSnapshots(List<SimileErrorSnapshot> snapshots)
 		{
-			sink.AddEntries(errors);
+			foreach (SimileErrorSnapshot snap in snapshots)
+				if(snap != null)
+					sink.AddSnapshot(snap);
 		}
 
-		public void RemoveErrors(List<SimileError> errors)
+		public void ClearAllSnapshots()
 		{
-			sink.RemoveEntries(errors);
+			sink.RemoveAllSnapshots();
 		}
 
-		public void Clear()
-		{
-			sink.RemoveAllEntries();
-		}
+		
 
 		public void UpdateSink(IEnumerable<SimileErrorSnapshot> newSnapshots)
 		{

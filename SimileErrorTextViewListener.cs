@@ -29,11 +29,12 @@ namespace ConsoleCompare
 				// If we're not tracking this buffer, add to the list and subscribe
 				if (!liveBuffers.ContainsKey(buffer))
 				{
+					// Track this buffer and subscribe to its change event
 					liveBuffers.Add(buffer, new List<SimileError>());
 					buffer.ChangedLowPriority += Buffer_ChangedLowPriority;
 
-					// Also perform an initial parse for errors
-					ParseForErrors(buffer);
+					// Register this buffer with the error source
+					SimileErrorSource.Instance.RegisterLiveBuffer(buffer);
 				}
 			}
 		}
@@ -47,11 +48,8 @@ namespace ConsoleCompare
 				// Were we tracking this buffer?
 				if (liveBuffers.ContainsKey(buffer))
 				{
-					// Remove all of this buffer's errors from the list, then get rid of this buffer
-					SimileErrorSource.Instance.RemoveErrors(liveBuffers[buffer]);
-					liveBuffers.Remove(buffer);
-					
-					// Also unsubscribe from changes
+					// Remove this buffer from the error source and unsubscribe from its changes
+					SimileErrorSource.Instance.RemoveLiveBuffer(buffer);
 					buffer.ChangedLowPriority -= Buffer_ChangedLowPriority;
 				}
 			}
@@ -60,55 +58,14 @@ namespace ConsoleCompare
 
 		private void Buffer_ChangedLowPriority(object sender, TextContentChangedEventArgs e)
 		{
-			// Parse the new text and report errors!
-			ITextBuffer buffer = sender as ITextBuffer;
-			ParseForErrors(buffer);
-		}
+			// Report the new length, in the event lines with errors were removed!
+			SimileErrorSource.Instance.VerifyBufferLength(sender as ITextBuffer);
 
-		private void ParseForErrors(ITextBuffer buffer)
-		{
-			// First, remove all errors associated with this buffer to start fresh
-			List<SimileError> bufferErrorList = liveBuffers[buffer];
-			SimileErrorSource.Instance.RemoveErrors(bufferErrorList);
-			bufferErrorList.Clear();
-
-			// Get the file name
-			string filename = GetDocumentFilename(buffer.CurrentSnapshot);
-
-			// Create the snapshot
-			SimileError error = new SimileError()
-			{
-				Text = "Called Parse For Errors",
-				DocumentName = filename,
-				LineNumber = 99
-			};
-
-			// Add to the list and pass on
-			bufferErrorList.Add(error);
-			SimileErrorSource.Instance.AddErrors(bufferErrorList);
-		}
-
-		private string GetDocumentFilename(ITextSnapshot snapshot)
-		{
-			// Grab the full path and strip down to filename
-			string path = GetDocumentPath(snapshot);
-			if (!string.IsNullOrEmpty(path))
-				return Path.GetFileName(path);
-
-			// Path/filename not found
-			return null;
+			// Push all errors to sinks since something has changed
+			SimileErrorSource.Instance.PushAllErrorsToSinks();
 		}
 
 
-		private string GetDocumentPath(ITextSnapshot snapshot)
-		{
-			// Attempt to get the text document from the snapshot and return the filepath
-			ITextDocument doc = null;
-			if (snapshot.TextBuffer.Properties.TryGetProperty(typeof(ITextDocument), out doc) && doc != null)
-				return doc.FilePath;
-
-			// Unable to find text document
-			return null;
-		}
+	
 	}
 }

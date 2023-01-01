@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Text.Classification;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Markup.Localizer;
 
 // Details on overall classifier setup: https://stackoverflow.com/a/37602798
 // Options for adding errors to error list: https://stackoverflow.com/a/59608426
@@ -64,6 +65,8 @@ namespace ConsoleCompare
 		/// <returns>A list of ClassificationSpans that represent spans identified to be of this classification.</returns>
 		public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span)
 		{
+			SimileErrorSnapshot errorSnapshot = new SimileErrorSnapshot();
+
 			// Grab possible error details
 			int lineNumber = span.Snapshot.GetLineNumberFromPosition(span.Start);
 			string filename = GetDocumentFilename(span.Snapshot);
@@ -109,26 +112,26 @@ namespace ConsoleCompare
 					if (numericTagsOpen == 0)
 					{
 						// Check the tag's validity
-						int numericTagEnd = i - numericTagStart + SimileParser.NumericTagEnd.Length;
-						string tag = text.Substring(numericTagStart, numericTagEnd);
+						int numericTagLength = i - numericTagStart + SimileParser.NumericTagEnd.Length;
+						string tag = text.Substring(numericTagStart, numericTagLength);
 						bool validTag = SimileParser.ParseNumericTag(tag, null);
 
 						// Create the span either way, but color code based on validity
 						results.Add(CreateTagSpan(
 							span,
 							numericTagStart,
-							numericTagEnd,
+							numericTagLength,
 							validTag ? simileNumericTagType : simileErrorType));
 
 						if (!validTag)
 						{
-							//errorSnapshot.AddError(
-							//	new SimileError()
-							//	{
-							//		DocumentName = filename,
-							//		Text = "Error with numeric tag",
-							//		LineNumber = lineNumber
-							//	});
+							errorSnapshot.AddError(new SimileError()
+							{
+								Text = "Error with numeric tag",
+								DocumentName = filename,
+								LineNumber = lineNumber,
+								ColumnNumber = i
+							});
 						}
 					}
 				}
@@ -153,16 +156,85 @@ namespace ConsoleCompare
 							inputTagStart,
 							i - inputTagStart + SimileParser.InputTagEnd.Length,
 							simileInputTagType));
+
+						// Is there anything after this tag?
+						int afterTag = i + SimileParser.InputTagEnd.Length;
+						if (afterTag < text.TrimEnd('\r', '\n').Length) // TODO: Maybe optimize this slightly?
+						{
+							// Error: Input tag is not at the end of the line
+							errorSnapshot.AddError(new SimileError()
+							{
+								Text = "Input tag is not at the end of line",
+								DocumentName = filename,
+								LineNumber = lineNumber,
+								ColumnNumber = inputTagStart
+							});
+
+							// Classify everything AFTER the tag as an error
+							results.Add(CreateTagSpan(
+								span,
+								afterTag,
+								text.Length - afterTag,
+								simileErrorType));
+						}
+
 					}
 				}
 
-				// Is anything invalid up to this point?
-				if (numericTagsOpen < 0 || // Ended before began
-					numericTagsOpen > 1 || // Double open symbols
-					inputTagsOpen < 0 || // Ended before began
-					inputTagsOpen > 1 || // Double open symbols
-					(inputTagCount == 1 && numericTagCount > 0)) // Input AND numeric tags together
+				// == Check all possible errors ==
+
+				// Numeric tag start/end mismatch
+				if (numericTagsOpen < 0 || numericTagsOpen > 1)
 				{
+					errorSnapshot.AddError(new SimileError()
+					{
+						Text = "Numeric tag open/close mismatch",
+						DocumentName = filename,
+						LineNumber = lineNumber,
+						ColumnNumber = i
+					});
+					isError = true;
+					break;
+				}
+
+				// Input tag start/end mismatch
+				if (inputTagsOpen < 0 || inputTagsOpen > 1)
+				{
+					errorSnapshot.AddError(new SimileError()
+					{
+						Text = "Input tag open/close mismatch",
+						DocumentName = filename,
+						LineNumber = lineNumber,
+						ColumnNumber = i
+					});
+					isError = true;
+					break;
+				}
+
+				// Mixing of tags (input tag cannot appear with a numeric tag)
+				if (inputTagCount == 1 && numericTagCount > 0)
+				{
+					errorSnapshot.AddError(new SimileError()
+					{
+						Text = "Input tags cannot appear on the same line as numeric tags",
+						DocumentName = filename,
+						LineNumber = lineNumber,
+						ColumnNumber = i
+					});
+					isError = true;
+					break;
+				}
+
+				// Multiple input tags
+				if (inputTagCount > 1)
+				{
+					errorSnapshot.AddError(new SimileError()
+					{
+						Text = "Cannot have more than one input tag per line",
+						DocumentName = filename,
+						LineNumber = lineNumber,
+						ColumnNumber = i
+					});
 					isError = true;
 					break;
 				}
@@ -171,20 +243,17 @@ namespace ConsoleCompare
 			// Was there an error anywhere on the line?
 			if (isError)
 			{
-				//SimileError error = new SimileError()
-				//{
-				//	Text = "NEED ERROR DETAILS",
-				//	DocumentName = filename,
-				//	LineNumber = lineNumber
-				//};
-				//errorSnapshot.AddError(error);
-
 				// Classify the whole line as an error
 				results.Add(CreateTagSpan(span, 0, span.Length, simileErrorType));
 			}
 
-			// Return our list of classifications (which may be empty)
-		//	SimileErrorSource.Instance.AddError(errorSnapshot);
+			// Push the errors if they exist, otherwise clear any old ones
+			if (errorSnapshot.Count > 0)
+				SimileErrorSource.Instance.AddErrorSnapshot(span.Snapshot.TextBuffer, lineNumber, errorSnapshot);
+			else
+				SimileErrorSource.Instance.ClearErrorSnapshot(span.Snapshot.TextBuffer, lineNumber);
+
+			// Return overall results (which may be null)
 			return results;
 		}
 
@@ -202,7 +271,7 @@ namespace ConsoleCompare
 		}
 
 		/// <summary>
-		/// Determiens if the given string contains the given value starting at the specified index
+		/// Determines if the given string contains the given value starting at the specified index
 		/// </summary>
 		/// <param name="str">The string to search</param>
 		/// <param name="value">The string to look for</param>
@@ -213,7 +282,7 @@ namespace ConsoleCompare
 			int valOffset = 0;
 			while (
 				valOffset < value.Length &&
-				valOffset + index < str.Length &&
+				valOffset + index <= str.Length &&
 				value[valOffset] == str[index])
 			{
 				valOffset++;
