@@ -7,8 +7,19 @@
 # - Console input is defined inside input tags: {{ }}
 # - Input tags must be at the end of a line
 # - Input tags cannot appear on the same line as numeric tags
+# - Example of mixed output and input:
+#   What is your name? {{Jimmy}}
 #
 # Numeric Tags
-# - Use [[ ]]'s to define parsable numeric output
+# - Use [[ ]]'s to define parsable numeric output with one or more options
+# - Numeric tag options:
+#   - type or t (required): denotes the type of data
+#   - min (optional): defines a minimum value for the data
+#   - max (optional): defines a maximum value for the data
+#   - values or v (optional): defines a set of one or more possible values
+#   - precision or p (optional): defines a decimal precision for rounding
+# - Examples:
+#   - [[type=int;values={5,10,15}]] or [[t=int;min=0;max=100]] or [[t=double;p=3]]
 #
+# Actual simile begins on the next line:
 Hello, world!
