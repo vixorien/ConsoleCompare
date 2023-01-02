@@ -17,6 +17,8 @@ using System.Windows.Forms;
 using VSLangProj;
 using Microsoft.VisualStudio.Imaging;
 
+// Known monikers preview: http://glyphlist.azurewebsites.net/knownmonikers/
+
 namespace ConsoleCompare
 {
 	internal class CaptureManager //: IVsSolutionEvents // <-- Only necessary if we're registering solution/project events
@@ -137,7 +139,7 @@ namespace ConsoleCompare
 			int matchCount = 0;
 
 			// Loop thorugh all simile lines and check against the process's output
-			for (int i = 0; i < simile.Count; i++)
+			for (int i = 0; i < simile.Count && !killThread; i++)
 			{
 				// Will we be appending this line?
 				bool append = previousLineEnding == LineEndingType.SameLine;
@@ -190,8 +192,11 @@ namespace ConsoleCompare
 							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 							// Add the text to both boxes
-							window.AddTextOutput(actual, ResultsTextType.Output, append, match);
-							window.AddTextExpected(expectedReport, ResultsTextType.Output, append, match);
+							if (!killThread)
+							{
+								window.AddTextOutput(actual, ResultsTextType.Output, append, match);
+								window.AddTextExpected(expectedReport, ResultsTextType.Output, append, match);
+							}
 						});
 
 						// Save the previous ending
@@ -211,8 +216,11 @@ namespace ConsoleCompare
 							await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 							// Add the text to both boxes (assuming a match since we're providing the input)
-							window.AddTextOutput(input.Text, ResultsTextType.Input, append, true);
-							window.AddTextExpected(input.Text, ResultsTextType.Input, append, true);
+							if (!killThread)
+							{
+								window.AddTextOutput(input.Text, ResultsTextType.Input, append, true);
+								window.AddTextExpected(input.Text, ResultsTextType.Input, append, true);
+							}
 						});
 
 						// Previous line ending is now a new line since we're simulating the user pressing enter
@@ -242,11 +250,17 @@ namespace ConsoleCompare
 				window.OpenButtonEnabled = true;
 
 				if (killThread)
+				{
 					window.SetStatus("Comparison stopped early by user", KnownMonikers.StatusStopped);
+					window.AddTextOutput("Process stopped by user!", ResultsTextType.Output, false, false);
+					window.AddTextExpected("Process stopped by user!", ResultsTextType.Output, false, false);
+				}
 				else
+				{
 					window.SetStatus(
-						$"Comparison finished - {matchCount}/{lineCount} lines match", 
+						$"Comparison finished - {matchCount}/{lineCount} lines match",
 						matchCount == lineCount ? KnownMonikers.StatusOK : KnownMonikers.StatusError);
+				}
 			});
 
 			killThread = false;

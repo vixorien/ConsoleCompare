@@ -96,9 +96,9 @@ namespace ConsoleCompare
 		/// Scans the current solution for code elements and the
 		/// status of their comments (XML, regular or none)
 		/// </summary>
-		/// <param name="windowControl">The window control for reporting results, if any</param>
+		/// <param name="window">The window for reporting results, if any</param>
 		/// <returns>Object containing info on code elements and comment counts</returns>
-		public static CommentCheckResults ScanForComments(ResultsWindowControl windowControl)
+		public static CommentCheckResults ScanForComments(ResultsWindow window)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -130,11 +130,11 @@ namespace ConsoleCompare
 			}
 
 			// Are we reporting results?
-			if (windowControl != null)
+			if (window != null)
 			{
-				windowControl.TextComments.Text = results.ToString();
-				windowControl.CommentIcon.Moniker =
-					results.AllXMLComments ? KnownMonikers.StatusOK : KnownMonikers.Uncomment;
+				window.SetCommentStatus(
+					results.ToString(),
+					results.AllXMLComments ? KnownMonikers.StatusOK : KnownMonikers.Uncomment);
 			}
 
 			return results;

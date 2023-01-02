@@ -10,6 +10,7 @@ using System.IO;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using EnvDTE;
+using System.Windows.Media.Animation;
 
 namespace ConsoleCompare
 {
@@ -209,7 +210,7 @@ namespace ConsoleCompare
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			// Scan for comments and report the results
-			CommentChecker.ScanForComments(windowControl);
+			CommentChecker.ScanForComments(this);
 
 			// Can't capture without a simile
 			if (currentSimile == null)
@@ -244,10 +245,20 @@ namespace ConsoleCompare
 		/// </summary>
 		/// <param name="text">Text to display</param>
 		/// <param name="icon">Icon to show</param>
-		public void SetCommentStatus(string text, ImageMoniker icon)
+		/// <param name="animateIcon">Should the icon be animated for a short while?</param>
+		public void SetCommentStatus(string text, ImageMoniker icon, bool animateIcon = true)
 		{
 			windowControl.TextComments.Text = text;
 			windowControl.CommentIcon.Moniker = icon;
+
+			// TODO: Create this once at start up
+			ObjectAnimationUsingKeyFrames frames = new ObjectAnimationUsingKeyFrames();
+			frames.KeyFrames.Add(new DiscreteObjectKeyFrame(KnownMonikers.StatusInformationOutline));
+			frames.KeyFrames.Add(new DiscreteObjectKeyFrame(icon));
+			frames.Duration = new Duration(TimeSpan.FromSeconds(0.5));
+			frames.RepeatBehavior = new RepeatBehavior(3);
+
+			windowControl.CommentIcon.BeginAnimation(CrispImage.MonikerProperty, frames);
 		}
 
 		/// <summary>

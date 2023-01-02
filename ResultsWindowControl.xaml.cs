@@ -73,8 +73,8 @@ namespace ConsoleCompare
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			// Run the comment check and report results back to this window control
-			CommentChecker.ScanForComments(this);
+			// Run the comment check and report results back to this window
+			CommentChecker.ScanForComments(window);
 		}
 
 	}
