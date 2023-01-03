@@ -16,6 +16,8 @@ using System.Security.AccessControl;
 using System.Windows.Forms;
 using VSLangProj;
 using Microsoft.VisualStudio.Imaging;
+using System.Timers;
+using Microsoft.VisualStudio.Imaging.Interop;
 
 // Known monikers preview: http://glyphlist.azurewebsites.net/knownmonikers/
 
@@ -23,6 +25,15 @@ namespace ConsoleCompare
 {
 	internal class CaptureManager //: IVsSolutionEvents // <-- Only necessary if we're registering solution/project events
 	{
+		// Constants for capture output and options
+		private const int ProcessTimeoutSeconds = 5;
+		private const string ProcessTimeoutMessage = "Process taking a while; probable input/output mismatch or infinite loop";
+
+		private const string StatusProcessStoppedByUser = "Comparison stopped early by user";
+		private const string TextProcessStoppedByUser = "Process stopped by user";
+		private readonly ImageMoniker IconProcessStoppedByUser = KnownMonikers.StatusStopped;
+
+
 		// Visual studio-level stuff
 		private DTE dte;
 		private ResultsWindow window;
@@ -32,7 +43,8 @@ namespace ConsoleCompare
 		private ConsoleSimile simile; 
 		private System.Diagnostics.Process proc;
 		private System.Threading.Thread procThread;
-		private bool killThread; // Super unsafe - should probably replace with cancellation token stuff
+		private bool killThread; // Not the safest, but should work for our purpose of ending a thread
+		private System.Timers.Timer processTimeoutTimer;
 		
 		/// <summary>
 		/// Creates a capture manager for capturing and comparing console output
@@ -44,6 +56,10 @@ namespace ConsoleCompare
 
 			this.window = window;
 			dte = Package.GetGlobalService(typeof(DTE)) as DTE;
+
+			// Set up the timer for process timeout
+			processTimeoutTimer = new System.Timers.Timer(ProcessTimeoutSeconds * 1000);
+			processTimeoutTimer.Elapsed += ProcessTimeoutTimer_Elapsed;
 
 			// For reference: Use this to hook up solution-related events (like opening, closing, etc.)
 			//IVsSolution solution = ServiceProvider.GlobalProvider.GetService(typeof(SVsSolution)) as IVsSolution;
@@ -91,6 +107,9 @@ namespace ConsoleCompare
 				MessageBox(
 					"Cannot run output capture; compiled executable not found: " + exePath,
 					"Error");
+				window.CaptureButtonEnabled = true;
+				window.StopButtonEnabled = false;
+				window.OpenButtonEnabled = true;
 				return;
 			}
 
@@ -118,6 +137,8 @@ namespace ConsoleCompare
 			procThread.Start();
 			window.SetStatus("Application started", KnownMonikers.StatusRunning);
 
+			window.BeginRunStatusAnimation();
+
 		}
 
 		/// <summary>
@@ -130,6 +151,9 @@ namespace ConsoleCompare
 			// Note: Do NOT block the process here using WaitForExit(), as that
 			// will cause problems with the threaded nature of the UI system
 			proc.Start();
+
+			// Start the timer
+			processTimeoutTimer.Start();
 
 			// Track the previous line's ending to know if the next has to append
 			LineEndingType previousLineEnding = LineEndingType.NewLine;
@@ -239,6 +263,9 @@ namespace ConsoleCompare
 					break;
 			}
 
+			// Once we're out of the loop, kill the timer
+			processTimeoutTimer.Stop();
+
 			// Swap to the UI thread to update
 			ThreadHelper.JoinableTaskFactory.Run(async delegate
 			{
@@ -248,12 +275,13 @@ namespace ConsoleCompare
 				window.CaptureButtonEnabled = true;
 				window.StopButtonEnabled = false;
 				window.OpenButtonEnabled = true;
+				window.EndRunStatusAnimation();
 
 				if (killThread)
 				{
-					window.SetStatus("Comparison stopped early by user", KnownMonikers.StatusStopped);
-					window.AddTextOutput("Process stopped by user!", ResultsTextType.Output, false, false);
-					window.AddTextExpected("Process stopped by user!", ResultsTextType.Output, false, false);
+					window.SetStatus(StatusProcessStoppedByUser, IconProcessStoppedByUser);
+					window.AddTextOutput(TextProcessStoppedByUser, ResultsTextType.Output, false, false);
+					window.AddTextExpected(TextProcessStoppedByUser, ResultsTextType.Output, false, false);
 				}
 				else
 				{
@@ -265,6 +293,22 @@ namespace ConsoleCompare
 
 			killThread = false;
 		}
+
+
+		public void ProcessTimeoutTimer_Elapsed(object source, ElapsedEventArgs e)
+		{
+			processTimeoutTimer.Stop();
+
+			// Swap to the UI thread to update
+			ThreadHelper.JoinableTaskFactory.Run(async delegate
+			{
+				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+				// The process has been running for a while, so notify the user and disable the timer
+				window.SetStatusNoIconChange(ProcessTimeoutMessage);
+			});
+		}
+
 
 		/// <summary>
 		/// Stops a capture in progress, if one exists

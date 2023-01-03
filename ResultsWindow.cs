@@ -240,15 +240,85 @@ namespace ConsoleCompare
 			windowControl.StatusIcon.Moniker = icon;
 		}
 
+
+		public void SetStatusNoIconChange(string text)
+		{
+			windowControl.TextStatus.Text = text;
+		}
+
+		public void BeginRunStatusAnimation()
+		{
+			//ImageMoniker[] animationFrames =
+			//{
+			//	KnownMonikers.LevelOne,
+			//	KnownMonikers.LevelTwo,
+			//	KnownMonikers.LevelThree,
+			//	KnownMonikers.LevelFour
+			//};
+
+			ImageMoniker[] animationFrames =
+			{
+				KnownMonikers.FourRows,
+				KnownMonikers.FirstOfFourRows,
+				KnownMonikers.SecondOfFourRows,
+				KnownMonikers.ThirdOfFourRows,
+				KnownMonikers.FourthOfFourRows
+			};
+
+			// Start on first frame
+			windowControl.StatusIcon.Moniker = animationFrames[0];
+
+			ObjectAnimationUsingKeyFrames frames = new ObjectAnimationUsingKeyFrames();
+
+			// Proceed to other frames
+			for (int i = 1; i < animationFrames.Length; i++)
+				frames.KeyFrames.Add(new DiscreteObjectKeyFrame(animationFrames[i]));
+			frames.KeyFrames.Add(new DiscreteObjectKeyFrame(animationFrames[0])); // Never displays the last (presumably since there's no interpolation?)
+
+			frames.Duration = new Duration(TimeSpan.FromSeconds(4));
+			frames.RepeatBehavior = RepeatBehavior.Forever;
+			
+
+			windowControl.StatusIcon.BeginAnimation(CrispImage.MonikerProperty, frames);
+		}
+
+		public void EndRunStatusAnimation()
+		{
+			windowControl.StatusIcon.BeginAnimation(CrispImage.MonikerProperty, null);
+		}
+
+
+		/// <summary>
+		/// Rotates the status icon
+		/// Note: This ends up being very low quality!
+		/// </summary>
+		public void RotateStatusIcon()
+		{
+			RotateTransform rotation = new RotateTransform();
+			rotation.CenterX = windowControl.StatusIcon.Width / 2.0f;
+			rotation.CenterY = windowControl.StatusIcon.Height / 2.0f;
+			windowControl.StatusIcon.RenderTransform = rotation;
+
+			DoubleAnimation anim = new DoubleAnimation();
+			anim.From = 0;
+			anim.To = 360;
+			anim.Duration = new Duration(TimeSpan.FromSeconds(1));
+			anim.RepeatBehavior = new RepeatBehavior(TimeSpan.FromSeconds(5));
+
+			rotation.BeginAnimation(RotateTransform.AngleProperty, anim);
+		}
+
 		/// <summary>
 		/// Sets the comment-specific status text and icon
 		/// </summary>
 		/// <param name="text">Text to display</param>
 		/// <param name="icon">Icon to show</param>
+		/// <param name="tooltipText">Text to display on mouse over</param>
 		/// <param name="animateIcon">Should the icon be animated for a short while?</param>
-		public void SetCommentStatus(string text, ImageMoniker icon, bool animateIcon = true)
+		public void SetCommentStatus(string text, ImageMoniker icon, string tooltipText = null, bool animateIcon = true)
 		{
 			windowControl.TextComments.Text = text;
+			windowControl.TextComments.ToolTip = string.IsNullOrEmpty(tooltipText) ? null : tooltipText;
 			windowControl.CommentIcon.Moniker = icon;
 
 			// TODO: Create this once at start up

@@ -17,9 +17,9 @@
 		<Grid.RowDefinitions>
 			<RowDefinition Height="30"/> <!-- Tool bar -->
 			<RowDefinition Height="32"/> <!-- Overall status -->
-			<RowDefinition Height="30"/> <!-- Comment status -->
 			<RowDefinition Height="25"/> <!-- Text box labels -->
 			<RowDefinition Height="*"/> <!-- Text boxes -->
+			<RowDefinition Height="30"/> <!-- Comment status -->
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="*"/>
@@ -61,16 +61,7 @@
 				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Stop}"/>
 			</Button>
 
-			<Button
-				Name="ButtonComments"
-				Click="ButtonComments_Click"
-				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
-				MinWidth="5"
-				Margin="20,0,0,0"
-				ToolTip="Check for comments on classes, methods and properties">
-				<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.DescriptionViewer}"/>
-			</Button>
-
+		
 			<Button
 				Name="ButtonLoadSimile"
 				Click="ButtonLoadSimile_Click"
@@ -124,34 +115,12 @@
 
 		</StatusBar>
 
-		<!-- Comment status bar -->
-		<StatusBar 
-			Name="CommentStatusBar"
-			Margin="5,0,5,0" 
-			Grid.Row="2" 
-			Grid.ColumnSpan="2" 
-			Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"
-			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.StatusBarTextKey}}">
-
-			<StatusBarItem>
-				<imaging:CrispImage Margin="5,0,0,0" Name="CommentIcon" Moniker="{x:Static catalog:KnownMonikers.Comment}"/>
-			</StatusBarItem>
-
-			<StatusBarItem>
-				<TextBlock Name="LabelComments" Text="Comments:"/>
-			</StatusBarItem>
-
-			<StatusBarItem>
-				<TextBlock Name="TextComments" Text="Click comment button or run to check comments"/>
-			</StatusBarItem>
-
-		</StatusBar>
 		
 		<!-- Output text box labels -->
 		<Label 
 			Content="Program Output:" 
 			Grid.Column="0" 
-			Grid.Row="3" 
+			Grid.Row="2" 
 			HorizontalAlignment="Left" 
 			Width="105" 
 			Margin="10,0,0,0"
@@ -160,7 +129,7 @@
 		<Label 
 			Content="Expected Output:" 
 			Grid.Column="1" 
-			Grid.Row="3" 
+			Grid.Row="2" 
 			HorizontalAlignment="Left" 
 			Width="105" 
 			Margin="10,0,0,0"
@@ -170,7 +139,7 @@
 		<RichTextBox 
 			Name="ProgramOutput" 
 			Grid.Column="0" 
-			Grid.Row="4" 
+			Grid.Row="3" 
 			HorizontalAlignment="Stretch" 
 			VerticalAlignment="Stretch" 
 			Margin="5,5,5,5" 
@@ -185,7 +154,7 @@
 		<RichTextBox 
 			Name="ExpectedOutput"
 			Grid.Column="1" 
-			Grid.Row="4" 
+			Grid.Row="3" 
 			HorizontalAlignment="Stretch" 
 			VerticalAlignment="Stretch" 
 			Margin="5,5,5,5"
@@ -197,6 +166,42 @@
 			IsReadOnly="True" 
 			ScrollViewer.ScrollChanged="SyncScrollChanged" 
 			FontSize="14"/>
+		
+		<!-- Comment status bar -->
+		<StatusBar 
+			Name="CommentStatusBar"
+			Margin="5,0,5,0" 
+			Grid.Row="4" 
+			Grid.ColumnSpan="2" 
+			Background="{DynamicResource {x:Static vsshell:VsBrushes.AccentMediumKey}}"
+			Foreground="{DynamicResource {x:Static vsshell:VsBrushes.StatusBarTextKey}}">
+
+			<StatusBarItem>
+				<Button
+				Name="ButtonComments"
+				Click="ButtonComments_Click"
+				Style="{DynamicResource {x:Static vsshell:VsResourceKeys.ButtonStyleKey}}"
+				MinWidth="5"
+				Margin="0,0,0,0"
+				ToolTip="Check for comments on classes, methods and properties">
+					<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.DescriptionViewer}"/>
+				</Button>
+
+			</StatusBarItem>
+			
+			<StatusBarItem>
+				<imaging:CrispImage Margin="5,0,0,0" Name="CommentIcon" Moniker="{x:Static catalog:KnownMonikers.Comment}"/>
+			</StatusBarItem>
+
+			<StatusBarItem>
+				<TextBlock Name="LabelComments" Text="Comments:"/>
+			</StatusBarItem>
+
+			<StatusBarItem>
+				<TextBlock Name="TextComments" Text="Click comment button or run to check comments"/>
+			</StatusBarItem>
+
+		</StatusBar>
 
 	</Grid>
 </UserControl>

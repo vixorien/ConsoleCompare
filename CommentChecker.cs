@@ -61,10 +61,45 @@ namespace ConsoleCompare
 		/// <summary>
 		/// Gets whether or not all classes, methods and properties have XML comments
 		/// </summary>
-		public bool AllXMLComments =>
+		public bool HasAllXMLComments =>
 			ClassCount == ClassXMLCommentCount &&
 			MethodCount == MethodXMLCommentCount &&
 			PropertyCount == PropertyXMLCommentCount;
+
+		/// <summary>
+		/// Gets a summary of XML comment results
+		/// </summary>
+		/// <returns>A string with XML comment count summary</returns>
+		public string GetSummary()
+		{
+			return "XML Comments Found: " +
+				$"Classes: {ClassXMLCommentCount}/{ClassCount}  " +
+				$"Methods: {MethodXMLCommentCount}/{MethodCount}  " +
+				$"Properties: {PropertyXMLCommentCount}/{PropertyCount}";
+		}
+
+		/// <summary>
+		/// Gets a detailed string of XML comments and, if necessary, regular
+		/// (non-XML) comments found
+		/// </summary>
+		/// <returns>A string with XML and non-XML details</returns>
+		public string GetDetails()
+		{
+			string results = GetSummary();
+
+			// Any regular comments that should be XML?
+			if (RegularCommentTotal > 0)
+			{
+				results += "\n\n" +
+					"Regular (non-XML) comments found on: " +
+					$"{ClassRegularCommentCount} classes, " +
+					$"{MethodRegularCommentCount} methods and " +
+					$"{PropertyRegularCommentCount} properties";
+			}
+
+			return results;
+		}
+
 
 		/// <summary>
 		/// Returns a string detailing the count of XML comments on classes, methods and properties
@@ -72,18 +107,7 @@ namespace ConsoleCompare
 		/// <returns>A string with XML comment count details</returns>
 		public override string ToString()
 		{
-			string results = 
-				$"Classes: {ClassXMLCommentCount}/{ClassCount}  " + 
-				$"Methods: {MethodXMLCommentCount}/{MethodCount}  " +
-				$"Properties: {PropertyXMLCommentCount}/{PropertyCount}";
-
-			// Any regular comments that should be XML?
-			if (RegularCommentTotal > 0)
-			{
-				// TODO: Add info about regular comments here
-			}
-
-			return results;
+			return GetDetails();
 		}
 	}
 
@@ -133,8 +157,9 @@ namespace ConsoleCompare
 			if (window != null)
 			{
 				window.SetCommentStatus(
-					results.ToString(),
-					results.AllXMLComments ? KnownMonikers.StatusOK : KnownMonikers.Uncomment);
+					results.GetSummary(),
+					results.HasAllXMLComments ? KnownMonikers.StatusOK : KnownMonikers.Uncomment,
+					results.GetDetails());
 			}
 
 			return results;
@@ -160,8 +185,7 @@ namespace ConsoleCompare
 				case vsCMElement.vsCMElementClass:
 	
 					// Cast as class element to get details
-					CodeClass cl = element as CodeClass;
-					if (cl != null)
+					if (element is CodeClass cl)
 					{
 						results.ClassCount++;
 						if (!string.IsNullOrEmpty(cl.DocComment)) results.ClassXMLCommentCount++;
@@ -173,8 +197,7 @@ namespace ConsoleCompare
 				case vsCMElement.vsCMElementFunction:
 
 					// Cast as function element to get details
-					CodeFunction method = element as CodeFunction;
-					if (method != null)
+					if (element is CodeFunction method)
 					{
 						results.MethodCount++;
 						if (!string.IsNullOrEmpty(method.DocComment)) results.MethodXMLCommentCount++;
@@ -186,8 +209,7 @@ namespace ConsoleCompare
 				case vsCMElement.vsCMElementProperty:
 
 					// Cast as property element to get details
-					CodeProperty prop = element as CodeProperty;
-					if (prop != null)
+					if (element is CodeProperty prop)
 					{
 						results.PropertyCount++;
 						if (!string.IsNullOrEmpty(prop.DocComment)) results.PropertyXMLCommentCount++;
