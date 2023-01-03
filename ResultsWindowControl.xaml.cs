@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace ConsoleCompare
 {
@@ -67,8 +68,6 @@ namespace ConsoleCompare
 		/// <summary>
 		/// Runs the comment check
 		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
 		private void ButtonComments_Click(object sender, RoutedEventArgs e)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
@@ -77,5 +76,17 @@ namespace ConsoleCompare
 			CommentChecker.ScanForComments(window);
 		}
 
+
+		/// <summary>
+		/// Handles the comment text being clicked
+		/// </summary>
+		private void TextComments_Click(object sender, RoutedEventArgs e)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			window.ShowCommentDetailsPopup();
+		}
+
 	}
+
 }

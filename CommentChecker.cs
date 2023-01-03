@@ -72,10 +72,7 @@ namespace ConsoleCompare
 		/// <returns>A string with XML comment count summary</returns>
 		public string GetSummary()
 		{
-			return "XML Comments Found: " +
-				$"Classes: {ClassXMLCommentCount}/{ClassCount}  " +
-				$"Methods: {MethodXMLCommentCount}/{MethodCount}  " +
-				$"Properties: {PropertyXMLCommentCount}/{PropertyCount}";
+			return $"{XMLCommentTotal}/{ExpectedXMLCommentTotal} XML comment headers found";
 		}
 
 		/// <summary>
@@ -85,16 +82,19 @@ namespace ConsoleCompare
 		/// <returns>A string with XML and non-XML details</returns>
 		public string GetDetails()
 		{
-			string results = GetSummary();
+			string results = "XML comment headers found:\n" +
+				$" Classes: {ClassXMLCommentCount}/{ClassCount}\n" +
+				$" Methods: {MethodXMLCommentCount}/{MethodCount}\n" +
+				$" Properties: {PropertyXMLCommentCount}/{PropertyCount}";
 
 			// Any regular comments that should be XML?
 			if (RegularCommentTotal > 0)
 			{
 				results += "\n\n" +
-					"Regular (non-XML) comments found on: " +
-					$"{ClassRegularCommentCount} classes, " +
-					$"{MethodRegularCommentCount} methods and " +
-					$"{PropertyRegularCommentCount} properties";
+					"Regular (non-XML) comment headers found:\n" +
+					$" Classes: {ClassRegularCommentCount}\n" +
+					$" Methods: {MethodRegularCommentCount}\n" +
+					$" Properties: {PropertyRegularCommentCount}";
 			}
 
 			return results;

@@ -313,12 +313,12 @@ namespace ConsoleCompare
 		/// </summary>
 		/// <param name="text">Text to display</param>
 		/// <param name="icon">Icon to show</param>
-		/// <param name="tooltipText">Text to display on mouse over</param>
+		/// <param name="commentDetails">Extra details to be displayed on click</param>
 		/// <param name="animateIcon">Should the icon be animated for a short while?</param>
-		public void SetCommentStatus(string text, ImageMoniker icon, string tooltipText = null, bool animateIcon = true)
+		public void SetCommentStatus(string text, ImageMoniker icon, string commentDetails = null, bool animateIcon = true)
 		{
-			windowControl.TextComments.Text = text;
-			windowControl.TextComments.ToolTip = string.IsNullOrEmpty(tooltipText) ? null : tooltipText;
+			windowControl.TextComments.Text = text + (string.IsNullOrEmpty(commentDetails) ? "" : " (Click for details)");
+			windowControl.TextComments.Tag = commentDetails;
 			windowControl.CommentIcon.Moniker = icon;
 
 			// TODO: Create this once at start up
@@ -329,6 +329,20 @@ namespace ConsoleCompare
 			frames.RepeatBehavior = new RepeatBehavior(3);
 
 			windowControl.CommentIcon.BeginAnimation(CrispImage.MonikerProperty, frames);
+		}
+
+
+		public void ShowCommentDetailsPopup()
+		{
+			string details = windowControl.TextComments.Tag as string;
+			if (string.IsNullOrEmpty(details))
+				return;
+
+			MessageBox.Show(
+				details,
+				"Comment Details",
+				MessageBoxButton.OK,
+				MessageBoxImage.Information);
 		}
 
 		/// <summary>

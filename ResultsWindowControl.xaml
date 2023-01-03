@@ -12,6 +12,13 @@
              mc:Ignorable="d"
              d:DesignHeight="434.448" d:DesignWidth="539.8"
              Name="MyToolWindow">
+
+	<!-- Create a template for "invisible" buttons that only show their content -->
+	<UserControl.Resources>
+		<ControlTemplate x:Key="ContentOnlyTemplate" TargetType="{x:Type Button}">
+			<ContentPresenter/>
+		</ControlTemplate>
+	</UserControl.Resources>
 	
 	<Grid>
 		<Grid.RowDefinitions>
@@ -184,21 +191,31 @@
 				MinWidth="5"
 				Margin="0,0,0,0"
 				ToolTip="Check for comments on classes, methods and properties">
-					<imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.DescriptionViewer}"/>
+					<imaging:CrispImage Name="CommentIcon" Moniker="{x:Static catalog:KnownMonikers.DescriptionViewer}"/>
 				</Button>
 
 			</StatusBarItem>
 			
+			<!-- 
+			- Removing extra icon now that the button is on the same line
+			- Also used existing name "CommentIcon" for the icon in the button
+			
 			<StatusBarItem>
 				<imaging:CrispImage Margin="5,0,0,0" Name="CommentIcon" Moniker="{x:Static catalog:KnownMonikers.Comment}"/>
 			</StatusBarItem>
-
+			-->
+			
 			<StatusBarItem>
 				<TextBlock Name="LabelComments" Text="Comments:"/>
 			</StatusBarItem>
 
 			<StatusBarItem>
-				<TextBlock Name="TextComments" Text="Click comment button or run to check comments"/>
+				<Button Name="Button_TextComments" Template="{StaticResource ContentOnlyTemplate}" Click="TextComments_Click">
+					<TextBlock 
+						Name="TextComments" 
+						Foreground="{DynamicResource {x:Static vsshell:VsBrushes.StatusBarTextKey}}"
+						Text="Run comparison or click comment button to analyze code comments"/>
+				</Button>
 			</StatusBarItem>
 
 		</StatusBar>
