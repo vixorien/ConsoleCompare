@@ -1,12 +1,7 @@
-﻿using Microsoft.VisualStudio.Shell.TableControl;
-using Microsoft.VisualStudio.Shell.TableManager;
-using Microsoft.VisualStudio.Text;
+﻿using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Windows.Documents;
 
 namespace ConsoleCompare
 {
@@ -14,7 +9,7 @@ namespace ConsoleCompare
 	/// Classifier provider. It adds the classifier to the set of classifiers.
 	/// </summary>
 	[Export(typeof(IClassifierProvider))]
-	[ContentType("simile")] // This classifier applies to all text files.
+	[ContentType("simile")]
 	internal class SimileClassifierProvider : IClassifierProvider
 	{
 		// Disable "Field is never assigned to..." compiler's warning. Justification: the field is assigned by MEF.

@@ -1,11 +1,13 @@
 ﻿using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 using System.ComponentModel.Composition;
-using System.Windows;
 using System.Windows.Media;
 
 namespace ConsoleCompare
 {
+	/// <summary>
+	/// Defines all possible classifications of text within a simile file
+	/// </summary>
 	internal static class SimileClassifications
 	{
 		// Color settings
@@ -47,13 +49,13 @@ namespace ConsoleCompare
 		[Export(typeof(EditorFormatDefinition))]
 		[ClassificationType(ClassificationTypeNames = SimileErrorClassifier)]
 		[Name(SimileErrorClassifier)]
-		[UserVisible(true)] // This should be visible to the end user
+		[UserVisible(true)]
 		[Order(Before = Priority.Default)]
 		internal sealed class SimileErrorFormatDefinition : ClassificationFormatDefinition
 		{
 			public SimileErrorFormatDefinition()
 			{
-				this.DisplayName = "Simile Error"; // Human readable version of the name
+				this.DisplayName = "Simile Error";
 				this.BackgroundColor = ErrorBackgroundColor;
 
 				// Red dashed underline example
@@ -73,13 +75,13 @@ namespace ConsoleCompare
 		[Export(typeof(EditorFormatDefinition))]
 		[ClassificationType(ClassificationTypeNames = SimileCommentClassifier)]
 		[Name(SimileCommentClassifier)]
-		[UserVisible(true)] // This should be visible to the end user
+		[UserVisible(true)]
 		[Order(Before = Priority.Default)] 
 		internal sealed class SimileCommentFormatDefinition : ClassificationFormatDefinition
 		{
 			public SimileCommentFormatDefinition()
 			{
-				this.DisplayName = "Simile Comment"; // Human readable version of the name
+				this.DisplayName = "Simile Comment";
 				this.ForegroundColor = CommentForegroundColor;
 			}
 		}
@@ -91,13 +93,13 @@ namespace ConsoleCompare
 		[Export(typeof(EditorFormatDefinition))]
 		[ClassificationType(ClassificationTypeNames = SimileNumericTagClassifier)]
 		[Name(SimileNumericTagClassifier)]
-		[UserVisible(true)] // This should be visible to the end user
+		[UserVisible(true)]
 		[Order(Before = Priority.Default)]
 		internal sealed class SimileNumericTagFormatDefinition : ClassificationFormatDefinition
 		{
 			public SimileNumericTagFormatDefinition()
 			{
-				this.DisplayName = "Simile Numeric Tag"; // Human readable version of the name
+				this.DisplayName = "Simile Numeric Tag";
 				this.BackgroundColor = NumericTagBackgroundColor;
 			}
 		}
@@ -108,13 +110,13 @@ namespace ConsoleCompare
 		[Export(typeof(EditorFormatDefinition))]
 		[ClassificationType(ClassificationTypeNames = SimileInputTagClassifier)]
 		[Name(SimileInputTagClassifier)]
-		[UserVisible(true)] // This should be visible to the end user
+		[UserVisible(true)]
 		[Order(Before = Priority.Default)]
 		internal sealed class SimileInputTagFormatDefinition : ClassificationFormatDefinition
 		{
 			public SimileInputTagFormatDefinition()
 			{
-				this.DisplayName = "Simile Input Tag"; // Human readable version of the name
+				this.DisplayName = "Simile Input Tag";
 				this.BackgroundColor = InputTagBackgroundColor;
 				this.IsItalic = true;
 			}

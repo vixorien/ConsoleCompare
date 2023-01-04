@@ -7,11 +7,20 @@ using System.Threading.Tasks;
 
 namespace ConsoleCompare
 {
+	/// <summary>
+	/// Manages one of the sinks which collects entries/snapshots to
+	/// be placed into the error list table in visual studio
+	/// </summary>
 	internal class SimileErrorSinkManager : IDisposable
 	{
 		private ITableDataSink sink;
 		private SimileErrorSource errorSource;
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="errorSource"></param>
+		/// <param name="sink"></param>
 		public SimileErrorSinkManager(SimileErrorSource errorSource, ITableDataSink sink)
 		{
 			this.errorSource = errorSource;
@@ -19,6 +28,10 @@ namespace ConsoleCompare
 			errorSource.AddSinkManager(this);
 		}
 
+		/// <summary>
+		/// Add one or more snapshots to the sink
+		/// </summary>
+		/// <param name="snapshots">List of snapshots to add</param>
 		public void AddErrorSnapshots(List<SimileErrorSnapshot> snapshots)
 		{
 			foreach (SimileErrorSnapshot snap in snapshots)
@@ -26,30 +39,18 @@ namespace ConsoleCompare
 					sink.AddSnapshot(snap);
 		}
 
+		/// <summary>
+		/// Clear all snapshots from the sink
+		/// </summary>
 		public void ClearAllSnapshots()
 		{
 			sink.RemoveAllSnapshots();
 		}
 
-		
-
-		public void UpdateSink(IEnumerable<SimileErrorSnapshot> newSnapshots)
-		{
-			// Should we clear first?
-			//Clear();
-
-			//foreach (SimileErrorSnapshot newSnap in newSnapshots)
-			//{
-			//	// Do we know about this snapshot yet?
-			//	if (!sinkSnapshots.Contains(newSnap))
-			//	{
-			//		// Add to our list AND the sink itself
-			//		sinkSnapshots.Add(newSnap);
-			//		sink.AddSnapshot(newSnap);
-			//	}
-			//}
-		}
-
+		/// <summary>
+		/// Cleans up this object, removing all snapshots from the sink and 
+		/// removing this from the error source
+		/// </summary>
 		public void Dispose()
 		{
 			// Clean up first

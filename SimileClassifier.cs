@@ -1,20 +1,14 @@
-﻿using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Shell.TableManager;
-using Microsoft.VisualStudio.Text;
+﻿using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows.Markup.Localizer;
-
-// Details on overall classifier setup: https://stackoverflow.com/a/37602798
-// Options for adding errors to error list: https://stackoverflow.com/a/59608426
 
 namespace ConsoleCompare
 {
 	/// <summary>
 	/// Classifier that classifies all text as an instance of the "SimileClassifier" classification type.
+	/// Details on overall classifier setup (slightly different than this one): https://stackoverflow.com/a/37602798
 	/// </summary>
 	internal class SimileClassifier : IClassifier
 	{
@@ -293,7 +287,11 @@ namespace ConsoleCompare
 			return valOffset == value.Length;
 		}
 
-
+		/// <summary>
+		/// Gets just the filename of the document that the given snapshot belongs to
+		/// </summary>
+		/// <param name="snapshot">Snapshot of text</param>
+		/// <returns>Just the filename, or null if not found</returns>
 		private string GetDocumentFilename(ITextSnapshot snapshot)
 		{
 			// Grab the full path and strip down to filename
@@ -305,7 +303,11 @@ namespace ConsoleCompare
 			return null;
 		}
 
-
+		/// <summary>
+		/// Gets the overall file path to the document that the given snapshot belongs to
+		/// </summary>
+		/// <param name="snapshot">Snapshot of text</param>
+		/// <returns>The full file path, or null if not found</returns>
 		private string GetDocumentPath(ITextSnapshot snapshot)
 		{
 			// Attempt to get the text document from the snapshot and return the filepath

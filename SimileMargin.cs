@@ -7,7 +7,8 @@ using System.Windows.Media;
 namespace ConsoleCompare
 {
 	/// <summary>
-	/// Margin's canvas and visual definition including both size and content
+	/// An extra UI element that displays simile file details
+	/// Note: Some of this was auto-generated from a template!
 	/// </summary>
 	internal class SimileMargin : Canvas, IWpfTextViewMargin
 	{

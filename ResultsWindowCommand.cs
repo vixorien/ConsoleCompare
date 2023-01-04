@@ -2,15 +2,13 @@
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.ComponentModel.Design;
-using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 using Task = System.Threading.Tasks.Task;
 
 namespace ConsoleCompare
 {
 	/// <summary>
 	/// Command handler
+	/// Note: This is mostly from the project template!
 	/// </summary>
 	internal sealed class ResultsWindowCommand
 	{

@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Numerics;
-using System.Windows.Media.Animation;
-using System.Windows.Navigation;
 
 namespace ConsoleCompare
 {
@@ -263,6 +259,25 @@ namespace ConsoleCompare
 	}
 
 	/// <summary>
+	/// Represents allowable numeric types for numeric simile elements
+	/// </summary>
+	internal enum SimileNumericType
+	{
+		Byte,
+		SignedByte,
+		Char,
+		Short,
+		UnsignedShort,
+		Int,
+		UnsignedInt,
+		Long,
+		UnsignedLong,
+		Float,
+		Double,
+		Unknown
+	}
+
+	/// <summary>
 	/// Represents a single numeric element of a larger output line
 	/// </summary>
 	/// <typeparam name="T">The numeric data type of the element</typeparam>
@@ -340,22 +355,4 @@ namespace ConsoleCompare
 		}
 	}
 
-	/// <summary>
-	/// Represents allowable numeric types for numeric simile elements
-	/// </summary>
-	internal enum SimileNumericType
-	{
-		Byte,
-		SignedByte,
-		Char,
-		Short,
-		UnsignedShort,
-		Int,
-		UnsignedInt,
-		Long,
-		UnsignedLong,
-		Float,
-		Double,
-		Unknown
-	}
 }

@@ -12,17 +12,37 @@ using System.Threading.Tasks;
 
 namespace ConsoleCompare
 {
+	/// <summary>
+	/// The class that acts as a source of data for a table in the visual studio UI
+	/// Microsoft ref: https://github.com/microsoft/VSSDK-Extensibility-Samples/tree/master/ErrorList
+	/// Ref: https://github.com/madskristensen/WebAccessibilityChecker/tree/master/src/ErrorList
+	/// </summary>
 	internal class SimileErrorSource : ITableDataSource
 	{
+		// We need to handle potentially multiple "sinks" of data for the table
+		// Note: There is usually just a single one of these (the error list in VS),
+		//       but another extension may also subscribe so we need to handle that, too
 		private List<SimileErrorSinkManager> sinkManagers;
 
+		// Tracks errors on live buffers
+		// - key: a buffer that is active (live)
+		// - value: a list of error snapshots, one per line of text in the buffer (or null if no errors on that line)
 		private Dictionary<ITextBuffer, List<SimileErrorSnapshot>> liveBufferErrors;
 
+		// The provider that gives us access to the table
+		// Note: the import tag means VS will populate this property for us!
 		[Import]
 		private ITableManagerProvider TableManagerProvider { get; set; }
 
+
 		#region Singleton
+		// The one and only instance of this class
 		private static SimileErrorSource instance;
+
+		/// <summary>
+		/// Gets the single instance of this class, and instantiates 
+		/// one if it doesn't exist yet
+		/// </summary>
 		public static SimileErrorSource Instance
 		{
 			get => instance ?? (instance = new SimileErrorSource());
@@ -36,17 +56,16 @@ namespace ConsoleCompare
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			// Set up our data structures
 			sinkManagers = new List<SimileErrorSinkManager>();
 			liveBufferErrors = new Dictionary<ITextBuffer, List<SimileErrorSnapshot>>();
-
-			// Microsoft ref: https://github.com/microsoft/VSSDK-Extensibility-Samples/tree/master/ErrorList
-			// Ref: https://github.com/madskristensen/WebAccessibilityChecker/tree/master/src/ErrorList
 
 			// Ensure our imports are complete before moving on
 			IComponentModel compositionService = ServiceProvider.GlobalProvider.GetService(typeof(SComponentModel)) as IComponentModel;
 			compositionService?.DefaultCompositionService.SatisfyImportsOnce(this);
 
-			// Set this class up as a source for the error table
+			// Set this class up as a source for the error table and define
+			// which columns we're actually able to provide
 			ITableManager table = TableManagerProvider.GetTableManager(StandardTables.ErrorsTable);
 			table.AddSource(
 				this,
@@ -98,7 +117,12 @@ namespace ConsoleCompare
 			// the text view listener, which will fire PushAllErrorsToSinks()
 		}
 
-
+		/// <summary>
+		/// Removes entries from the list of errors if the number of lines
+		/// in the document has gone down (so "phantom" errors from old
+		/// lines go away)
+		/// </summary>
+		/// <param name="buffer">The buffer to verify</param>
 		public void VerifyBufferLength(ITextBuffer buffer)
 		{
 			// If this buffer doesn't exist, do nothing
@@ -112,7 +136,10 @@ namespace ConsoleCompare
 				errorList.RemoveRange(lineCount, errorList.Count - lineCount);
 		}
 
-		public void PushAllErrorsToSinks()
+		/// <summary>
+		/// Clears and re-sends all errors to each sink
+		/// </summary>
+		public void RefreshAllErrorsInSinks()
 		{
 			// Clear the sinks and push new errors
 			foreach (SimileErrorSinkManager sink in sinkManagers)
@@ -128,12 +155,20 @@ namespace ConsoleCompare
 			}
 		}
 
+		/// <summary>
+		/// Registers a buffer as live so we can track its errors
+		/// </summary>
+		/// <param name="buffer">The buffer to register</param>
 		public void RegisterLiveBuffer(ITextBuffer buffer)
 		{
 			if (!liveBufferErrors.ContainsKey(buffer))
 				liveBufferErrors.Add(buffer, new List<SimileErrorSnapshot>());
 		}
 
+		/// <summary>
+		/// Removes a buffer from our list of live buffers
+		/// </summary>
+		/// <param name="buffer">The buffer to remove</param>
 		public void RemoveLiveBuffer(ITextBuffer buffer)
 		{
 			liveBufferErrors.Remove(buffer);
@@ -142,26 +177,48 @@ namespace ConsoleCompare
 
 		#region Error Sink Management
 
-		public void AddSinkManager(SimileErrorSinkManager sink)
+		/// <summary>
+		/// Adds a sink manager to our list
+		/// </summary>
+		/// <param name="sinkManager">The sink manager to add</param>
+		public void AddSinkManager(SimileErrorSinkManager sinkManager)
 		{
-			sinkManagers.Add(sink);
+			sinkManagers.Add(sinkManager);
 		}
 
-		public void RemoveSinkManager(SimileErrorSinkManager sink)
+		/// <summary>
+		/// Removes a sink manager from our list
+		/// </summary>
+		/// <param name="sinkManager">The sink manager to add</param>
+		public void RemoveSinkManager(SimileErrorSinkManager sinkManager)
 		{
-			sinkManagers.Remove(sink);
+			sinkManagers.Remove(sinkManager);
 		}
 
 		#endregion
 
 		#region ITableDataSource
 
+		/// <summary>
+		/// Gets the type of table data we provide
+		/// </summary>
 		public string SourceTypeIdentifier => StandardTableDataSources.ErrorTableDataSource;
 
-		public string Identifier => "Console Compare"; // What should this be?
+		/// <summary>
+		/// Gets the ID of this data source
+		/// </summary>
+		public string Identifier => "Console Compare";
 
-		public string DisplayName => "Console Compare"; // What should this be?
+		/// <summary>
+		/// Gets the friendly display name of this data source
+		/// </summary>
+		public string DisplayName => "Console Compare";
 
+		/// <summary>
+		/// Allows another object to subscribe to our list of errors
+		/// </summary>
+		/// <param name="sink">The sink that wants a list of errors</param>
+		/// <returns>A manager for this sink</returns>
 		public IDisposable Subscribe(ITableDataSink sink)
 		{
 			return new SimileErrorSinkManager(this, sink);

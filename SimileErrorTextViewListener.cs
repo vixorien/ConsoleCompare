@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Composition;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Build.Framework;
-using Microsoft.VisualStudio.Text;
+﻿using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
 
 namespace ConsoleCompare
 {
+	/// <summary>
+	/// Allows us to listen for text views (essentially document tabs in visual studio)
+	/// of simile files being opened and closed (connected and disconnected)
+	/// </summary>
 	[Export(typeof(ITextViewConnectionListener))]
 	[ContentType("simile")] // Only simile files
 	[TextViewRole(PredefinedTextViewRoles.Interactive)]
@@ -20,7 +18,12 @@ namespace ConsoleCompare
 		// Track buffers along with their current snapshots
 		private Dictionary<ITextBuffer, List<SimileError>> liveBuffers = new Dictionary<ITextBuffer, List<SimileError>>();
 		
-
+		/// <summary>
+		/// Callback for when a text view of a simile file is opened
+		/// </summary>
+		/// <param name="textView">The text view itself</param>
+		/// <param name="reason">The reason for this connection</param>
+		/// <param name="subjectBuffers">The text buffers within the view</param>
 		public void SubjectBuffersConnected(ITextView textView, ConnectionReason reason, IReadOnlyCollection<ITextBuffer> subjectBuffers)
 		{
 			// Add any new buffers to the live buffer list and hook up their event
@@ -39,7 +42,12 @@ namespace ConsoleCompare
 			}
 		}
 
-
+		/// <summary>
+		/// Callback for when a text view of a simile file is closed
+		/// </summary>
+		/// <param name="textView">The text view itself</param>
+		/// <param name="reason">The reason for this disconnect</param>
+		/// <param name="subjectBuffers">The text buffers within the view</param>
 		public void SubjectBuffersDisconnected(ITextView textView, ConnectionReason reason, IReadOnlyCollection<ITextBuffer> subjectBuffers)
 		{
 			// Determine if the disconnecting buffers are in our list and, if so, remove
@@ -55,14 +63,18 @@ namespace ConsoleCompare
 			}
 		}
 
-
+		/// <summary>
+		/// Callback for a text buffer having its content changed.  This is when we
+		/// push any errors that have been classified down to the error sinks which
+		/// will display them in VS's error list.
+		/// </summary>
 		private void Buffer_ChangedLowPriority(object sender, TextContentChangedEventArgs e)
 		{
 			// Report the new length, in the event lines with errors were removed!
 			SimileErrorSource.Instance.VerifyBufferLength(sender as ITextBuffer);
 
 			// Push all errors to sinks since something has changed
-			SimileErrorSource.Instance.PushAllErrorsToSinks();
+			SimileErrorSource.Instance.RefreshAllErrorsInSinks();
 		}
 
 

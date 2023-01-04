@@ -1,15 +1,14 @@
-﻿using Microsoft.VisualStudio.Shell;
+﻿using Microsoft.VisualStudio.Imaging;
+using Microsoft.VisualStudio.Imaging.Interop;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.Win32;
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
-using System.Windows.Documents;
-using System.Windows.Media;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Win32;
-using System.IO;
-using Microsoft.VisualStudio.Imaging;
-using Microsoft.VisualStudio.Imaging.Interop;
-using EnvDTE;
+using System.Windows.Documents;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 
 namespace ConsoleCompare
@@ -240,12 +239,18 @@ namespace ConsoleCompare
 			windowControl.StatusIcon.Moniker = icon;
 		}
 
-
+		/// <summary>
+		/// Sets the status text without changing the icon
+		/// </summary>
+		/// <param name="text">Text to display</param>
 		public void SetStatusNoIconChange(string text)
 		{
 			windowControl.TextStatus.Text = text;
 		}
 
+		/// <summary>
+		/// Starts the animation for the "run" status
+		/// </summary>
 		public void BeginRunStatusAnimation()
 		{
 			//ImageMoniker[] animationFrames =
@@ -282,31 +287,14 @@ namespace ConsoleCompare
 			windowControl.StatusIcon.BeginAnimation(CrispImage.MonikerProperty, frames);
 		}
 
+		/// <summary>
+		/// Stops the animation for the "run" status
+		/// </summary>
 		public void EndRunStatusAnimation()
 		{
 			windowControl.StatusIcon.BeginAnimation(CrispImage.MonikerProperty, null);
 		}
 
-
-		/// <summary>
-		/// Rotates the status icon
-		/// Note: This ends up being very low quality!
-		/// </summary>
-		public void RotateStatusIcon()
-		{
-			RotateTransform rotation = new RotateTransform();
-			rotation.CenterX = windowControl.StatusIcon.Width / 2.0f;
-			rotation.CenterY = windowControl.StatusIcon.Height / 2.0f;
-			windowControl.StatusIcon.RenderTransform = rotation;
-
-			DoubleAnimation anim = new DoubleAnimation();
-			anim.From = 0;
-			anim.To = 360;
-			anim.Duration = new Duration(TimeSpan.FromSeconds(1));
-			anim.RepeatBehavior = new RepeatBehavior(TimeSpan.FromSeconds(5));
-
-			rotation.BeginAnimation(RotateTransform.AngleProperty, anim);
-		}
 
 		/// <summary>
 		/// Sets the comment-specific status text and icon
@@ -331,7 +319,9 @@ namespace ConsoleCompare
 			windowControl.CommentIcon.BeginAnimation(CrispImage.MonikerProperty, frames);
 		}
 
-
+		/// <summary>
+		/// Shows comment details as a basic message box (if necessary)
+		/// </summary>
 		public void ShowCommentDetailsPopup()
 		{
 			string details = windowControl.TextComments.Tag as string;

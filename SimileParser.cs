@@ -1,11 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.Shell.Interop;
-using System.Linq.Expressions;
-using System.CodeDom;
-using EnvDTE;
-using System.Linq;
+using System.IO;
 
 namespace ConsoleCompare
 {

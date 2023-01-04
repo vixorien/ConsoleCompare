@@ -1,28 +1,21 @@
-﻿using System;
-using EnvDTE;
-using System.IO;
-using System.Diagnostics;
+﻿using EnvDTE;
+using Microsoft.VisualStudio.Imaging;
+using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using EnvDTE80;
-using System.Windows.Media;
-using Microsoft.VisualStudio.PlatformUI;
-using System.Threading.Tasks;
-using System.Threading;
-using Microsoft.VisualStudio.VCProjectEngine;
-using System.Windows;
-using Microsoft.VisualStudio;
-using System.Security.AccessControl;
-using System.Windows.Forms;
-using VSLangProj;
-using Microsoft.VisualStudio.Imaging;
+using System;
+using System.Diagnostics;
+using System.IO;
 using System.Timers;
-using Microsoft.VisualStudio.Imaging.Interop;
+using VSLangProj;
 
 // Known monikers preview: http://glyphlist.azurewebsites.net/knownmonikers/
 
 namespace ConsoleCompare
 {
+	/// <summary>
+	/// Manages the capture and comparison of a console project process and a simile file
+	/// </summary>
 	internal class CaptureManager //: IVsSolutionEvents // <-- Only necessary if we're registering solution/project events
 	{
 		// Constants for capture output and options
@@ -295,6 +288,9 @@ namespace ConsoleCompare
 		}
 
 
+		/// <summary>
+		/// Handles the timer that denotes a process has potentially taken too long
+		/// </summary>
 		public void ProcessTimeoutTimer_Elapsed(object source, ElapsedEventArgs e)
 		{
 			processTimeoutTimer.Stop();
@@ -451,6 +447,7 @@ namespace ConsoleCompare
 			return null;
 		}
 
+		#region Unused - Necessary for solution events
 		//public int OnAfterOpenProject(IVsHierarchy pHierarchy, int fAdded)
 		//{
 		//	MessageBox("AFTER OPEN PROJECT");
@@ -503,5 +500,6 @@ namespace ConsoleCompare
 		//{
 		//	return VSConstants.S_OK;
 		//}
+		#endregion
 	}
 }
