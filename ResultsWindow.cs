@@ -253,6 +253,7 @@ namespace ConsoleCompare
 		/// </summary>
 		public void BeginRunStatusAnimation()
 		{
+			// Unused option for animation
 			//ImageMoniker[] animationFrames =
 			//{
 			//	KnownMonikers.LevelOne,
@@ -270,19 +271,18 @@ namespace ConsoleCompare
 				KnownMonikers.FourthOfFourRows
 			};
 
+			// Set up animation
+			ObjectAnimationUsingKeyFrames frames = new ObjectAnimationUsingKeyFrames();
+			frames.Duration = new Duration(TimeSpan.FromSeconds(4));
+			frames.RepeatBehavior = RepeatBehavior.Forever;
+
 			// Start on first frame
 			windowControl.StatusIcon.Moniker = animationFrames[0];
-
-			ObjectAnimationUsingKeyFrames frames = new ObjectAnimationUsingKeyFrames();
 
 			// Proceed to other frames
 			for (int i = 1; i < animationFrames.Length; i++)
 				frames.KeyFrames.Add(new DiscreteObjectKeyFrame(animationFrames[i]));
 			frames.KeyFrames.Add(new DiscreteObjectKeyFrame(animationFrames[0])); // Never displays the last (presumably since there's no interpolation?)
-
-			frames.Duration = new Duration(TimeSpan.FromSeconds(4));
-			frames.RepeatBehavior = RepeatBehavior.Forever;
-			
 
 			windowControl.StatusIcon.BeginAnimation(CrispImage.MonikerProperty, frames);
 		}
@@ -309,7 +309,7 @@ namespace ConsoleCompare
 			windowControl.TextComments.Tag = commentDetails;
 			windowControl.CommentIcon.Moniker = icon;
 
-			// TODO: Create this once at start up
+			// Might be better to create this once at startup, but the icon might be different each time
 			ObjectAnimationUsingKeyFrames frames = new ObjectAnimationUsingKeyFrames();
 			frames.KeyFrames.Add(new DiscreteObjectKeyFrame(KnownMonikers.StatusInformationOutline));
 			frames.KeyFrames.Add(new DiscreteObjectKeyFrame(icon));
