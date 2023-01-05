@@ -13,10 +13,11 @@ namespace ConsoleCompare
 		public const string PrefaceComment = "#";
 		public const string NumericTagStart = "[[";
 		public const string NumericTagEnd = "]]";
-		public const string NumericOptionDelimeter = ";";
+		public const string NumericOptionDelimiter = ";";
 		public const string NumericOptionEquals = "=";
 		public const string NumericValueSetStart = "{";
 		public const string NumericValueSetEnd = "}";
+		public const string NumericValueSetDelimiter = ",";
 		public const string InputTagStart = "{{";
 		public const string InputTagEnd = "}}";
 
@@ -373,7 +374,8 @@ namespace ConsoleCompare
 			string remainder = line.Substring(endIndex + NumericTagEnd.Length);
 
 			// Parse the tag
-			if (!ParseNumericTag(tag, output))
+			string errorDetails;
+			if (!ParseNumericTag(tag, output, out errorDetails))
 				return false;
 
 			// Recursively handle the remainder
@@ -385,14 +387,18 @@ namespace ConsoleCompare
 		/// </summary>
 		/// <param name="tag">The tag itself</param>
 		/// <param name="output">The output to add the numeric element to, or null if just checking validity</param>
+		/// <param name="errorDetails">String holding resulting error details, if any</param>
 		/// <returns>True if the tag is parsed successfully, false otherwise</returns>
-		public static bool ParseNumericTag(string tag, SimileLineOutput output)
+		public static bool ParseNumericTag(string tag, SimileLineOutput output, out string errorDetails)
 		{
+			// No errors necessarily
+			errorDetails = null;
+
 			// Strip the tag characters if necessary
 			tag = StripTag(tag);
 
 			// Split into options
-			string[] allOptions = tag.Split(new string[] { NumericOptionDelimeter }, StringSplitOptions.RemoveEmptyEntries);
+			string[] allOptions = tag.Split(new string[] { NumericOptionDelimiter }, StringSplitOptions.RemoveEmptyEntries);
 
 			// Process each option
 			SimileNumericType type = SimileNumericType.Unknown;
@@ -404,9 +410,17 @@ namespace ConsoleCompare
 			foreach (string op in allOptions)
 			{
 				// Split across the equals and check
-				string[] pieces = op.Split(new string[] { NumericOptionEquals }, StringSplitOptions.RemoveEmptyEntries);
-				if (pieces.Length != 2)
+				string[] pieces = op.Split(new string[] { NumericOptionEquals }, StringSplitOptions.None);
+				if (pieces.Length < 2)
+				{
+					errorDetails = "Incomplete tag option";
 					return false;
+				}
+				else if (pieces.Length > 2)
+				{
+					errorDetails = "Invalid tag option";
+					return false;
+				}
 
 				// Trim both halves before checking
 				pieces[0] = pieces[0].Trim();
@@ -417,7 +431,10 @@ namespace ConsoleCompare
 					case "type":
 						type = ParseType(pieces[1]);
 						if (type == SimileNumericType.Unknown)
+						{
+							errorDetails = "Unknown data type specified";
 							return false;
+						}
 						break;
 
 					case "min":
@@ -433,11 +450,19 @@ namespace ConsoleCompare
 						// Verify set has { }'s around the values
 						if (!pieces[1].StartsWith(NumericValueSetStart) ||
 							!pieces[1].EndsWith(NumericValueSetEnd))
+						{
+							errorDetails = $"Value set values not properly contained within {NumericValueSetStart} {NumericValueSetEnd}'s";
 							return false;
+						}
 
 						// Strip the start and end pieces, then split
 						pieces[1] = pieces[1].Substring(NumericValueSetStart.Length, pieces[1].Length - NumericValueSetStart.Length - NumericValueSetEnd.Length);
-						values = pieces[1].Split(',');
+						values = pieces[1].Split(new string[] { NumericValueSetDelimiter }, StringSplitOptions.RemoveEmptyEntries);
+						if (values.Length == 0)
+						{
+							errorDetails = "Value set is empty";
+							return false;
+						}
 						break;
 
 					case "p":
@@ -447,6 +472,7 @@ namespace ConsoleCompare
 
 					// Unknown option
 					default:
+						errorDetails = "Unknown tag option specified";
 						return false;
 				}
 			}
@@ -454,21 +480,22 @@ namespace ConsoleCompare
 			// Check the type and create the corresponding numeric element
 			switch (type)
 			{
-				case SimileNumericType.Byte: return CreateNumericElement<byte>(type, min, max, values, precision, output);
-				case SimileNumericType.SignedByte: return CreateNumericElement<sbyte>(type, min, max, values, precision, output);
-				case SimileNumericType.Char: return CreateNumericElement<char>(type, min, max, values, precision, output);
-				case SimileNumericType.Short: return CreateNumericElement<short>(type, min, max, values, precision, output);
-				case SimileNumericType.UnsignedShort: return CreateNumericElement<ushort>(type, min, max, values, precision, output);
-				case SimileNumericType.Int: return CreateNumericElement<int>(type, min, max, values, precision, output);
-				case SimileNumericType.UnsignedInt: return CreateNumericElement<uint>(type, min, max, values, precision, output);
-				case SimileNumericType.Long: return CreateNumericElement<long>(type, min, max, values, precision, output);
-				case SimileNumericType.UnsignedLong: return CreateNumericElement<ulong>(type, min, max, values, precision, output);
-				case SimileNumericType.Float: return CreateNumericElement<float>(type, min, max, values, precision, output);
-				case SimileNumericType.Double: return CreateNumericElement<double>(type, min, max, values, precision, output);
+				case SimileNumericType.Byte: return CreateNumericElement<byte>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.SignedByte: return CreateNumericElement<sbyte>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.Char: return CreateNumericElement<char>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.Short: return CreateNumericElement<short>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.UnsignedShort: return CreateNumericElement<ushort>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.Int: return CreateNumericElement<int>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.UnsignedInt: return CreateNumericElement<uint>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.Long: return CreateNumericElement<long>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.UnsignedLong: return CreateNumericElement<ulong>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.Float: return CreateNumericElement<float>(type, min, max, values, precision, output, out errorDetails);
+				case SimileNumericType.Double: return CreateNumericElement<double>(type, min, max, values, precision, output, out errorDetails);
 
 				// Invalid type found
 				case SimileNumericType.Unknown:
 				default:
+					errorDetails = "Unknown data type specified";
 					return false;
 			}
 		}
@@ -483,10 +510,14 @@ namespace ConsoleCompare
 		/// <param name="values">Array of values, or null for none</param>
 		/// <param name="precision">Precision value, or null for none</param>
 		/// <param name="output">The output to add the element to, or null if just checking validity</param>
+		/// <param name="errorDetails">String holding resulting error details, if any</param>
 		/// <returns>True if all strings are parsed correctly, false otherwise</returns>
-		private static bool CreateNumericElement<T>(SimileNumericType type, string min, string max, string[] values, string precision, SimileLineOutput output)
+		private static bool CreateNumericElement<T>(SimileNumericType type, string min, string max, string[] values, string precision, SimileLineOutput output, out string errorDetails)
 			where T : struct, IComparable
 		{
+			// Assume no error at first
+			errorDetails = null;
+
 			try
 			{
 				SimileOutputNumeric<T> num = new SimileOutputNumeric<T>(type);
@@ -499,7 +530,10 @@ namespace ConsoleCompare
 
 					// Precision is limited to what Math.Round() accepts
 					if (num.Precision < 0 || num.Precision > 15)
+					{
+						errorDetails = "Precision option value must be an integer between 0 and 15 (inclusive)";
 						return false;
+					}
 				}
 
 				// Add the element to the output line if non-null
@@ -509,6 +543,7 @@ namespace ConsoleCompare
 			catch
 			{
 				// One of the casts failed, so the numeric element is invalid
+				errorDetails = "One or more tag option values do not match specified tag data type";
 				return false;
 			}
 		}

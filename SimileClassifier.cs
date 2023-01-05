@@ -15,8 +15,9 @@ namespace ConsoleCompare
 		/// <summary>
 		/// Classification type.
 		/// </summary>
-		private readonly IClassificationType simileErrorType;
-		private readonly IClassificationType simileCommentType;
+		private readonly IClassificationType simileCommentType; 
+		private readonly IClassificationType simileTagErrorType;
+		private readonly IClassificationType simileLineErrorType;
 		private readonly IClassificationType simileInputTagType;
 		private readonly IClassificationType simileNumericTagType;
 
@@ -27,8 +28,9 @@ namespace ConsoleCompare
 		/// <param name="registry">Classification registry.</param>
 		internal SimileClassifier(IClassificationTypeRegistryService registry)
 		{
-			simileErrorType = registry.GetClassificationType(SimileClassifications.SimileErrorClassifier);
 			simileCommentType = registry.GetClassificationType(SimileClassifications.SimileCommentClassifier);
+			simileTagErrorType = registry.GetClassificationType(SimileClassifications.SimileTagErrorClassifier);
+			simileLineErrorType = registry.GetClassificationType(SimileClassifications.SimileLineErrorClassifier);
 			simileInputTagType = registry.GetClassificationType(SimileClassifications.SimileInputTagClassifier);
 			simileNumericTagType = registry.GetClassificationType(SimileClassifications.SimileNumericTagClassifier);
 		}
@@ -108,20 +110,21 @@ namespace ConsoleCompare
 						// Check the tag's validity
 						int numericTagLength = i - numericTagStart + SimileParser.NumericTagEnd.Length;
 						string tag = text.Substring(numericTagStart, numericTagLength);
-						bool validTag = SimileParser.ParseNumericTag(tag, null);
+						string errorDetails = null;
+						bool validTag = SimileParser.ParseNumericTag(tag, null, out errorDetails);
 
 						// Create the span either way, but color code based on validity
 						results.Add(CreateTagSpan(
 							span,
 							numericTagStart,
 							numericTagLength,
-							validTag ? simileNumericTagType : simileErrorType));
+							validTag ? simileNumericTagType : simileTagErrorType));
 
 						if (!validTag)
 						{
 							errorSnapshot.AddError(new SimileError()
 							{
-								Text = "Error with numeric tag",
+								Text = "Error with numeric tag: " + errorDetails,
 								DocumentName = filename,
 								LineNumber = lineNumber,
 								ColumnNumber = i
@@ -169,7 +172,7 @@ namespace ConsoleCompare
 								span,
 								afterTag,
 								text.Length - afterTag,
-								simileErrorType));
+								simileLineErrorType));
 						}
 
 					}
@@ -238,7 +241,7 @@ namespace ConsoleCompare
 			if (isError)
 			{
 				// Classify the whole line as an error
-				results.Add(CreateTagSpan(span, 0, span.Length, simileErrorType));
+				results.Add(CreateTagSpan(span, 0, span.Length, simileLineErrorType));
 			}
 
 			// Push the errors if they exist, otherwise clear any old ones

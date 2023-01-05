@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 using System.ComponentModel.Composition;
+using System.Windows;
 using System.Windows.Media;
 
 namespace ConsoleCompare
@@ -12,14 +13,34 @@ namespace ConsoleCompare
 	{
 		// Color settings
 		// Reference for colors: https://learn.microsoft.com/en-us/dotnet/media/art-color-table.png
-		internal static Color ErrorBackgroundColor = Colors.Firebrick;
-		internal static Color CommentForegroundColor = Colors.ForestGreen;
+		internal static Color ErrorTagBackgroundColor = Colors.Firebrick;
 		internal static Color InputTagBackgroundColor = Colors.DodgerBlue;
 		internal static Color NumericTagBackgroundColor = Colors.DarkGreen;
 
+		internal static Color CommentForegroundColor = Colors.ForestGreen;
+
+		// Details for fancy underline error effect
+		internal static SolidColorBrush ErrorLineBrush = Brushes.Firebrick;
+		internal static double ErrorLineExtraOffset = 5.0;
+		internal static double ErrorLineThickness = 2.0;
+
+		internal static TextDecoration ErrorLineDecoration = new TextDecoration()
+		{
+			Location = TextDecorationLocation.Underline,
+			PenOffset = ErrorLineExtraOffset,
+			Pen = new Pen()
+			{
+				Brush = ErrorLineBrush,
+				DashStyle = DashStyles.Dash,
+				Thickness = ErrorLineThickness
+			}
+		};
+
+
 		// Strings that refer to the possible classifications
-		internal const string SimileErrorClassifier = "SimileError";
-		internal const string SimileCommentClassifier = "SimileComment";
+		internal const string SimileCommentClassifier = "SimileComment"; 
+		internal const string SimileTagErrorClassifier = "SimileTagError";
+		internal const string SimileLineErrorClassifier = "SimileLineError";
 		internal const string SimileInputTagClassifier = "SimileInputTag";
 		internal const string SimileNumericTagClassifier = "SimileNumericTag";
 
@@ -27,13 +48,17 @@ namespace ConsoleCompare
 		// Note: Disabling warning for never being assigned as they're assigned by the extensibility framework (MEF)
 #pragma warning disable 169
 		[Export(typeof(ClassificationTypeDefinition))]
-		[Name(SimileErrorClassifier)]
-		private static ClassificationTypeDefinition SimileErrorType;
-
-		[Export(typeof(ClassificationTypeDefinition))]
 		[Name(SimileCommentClassifier)]
 		private static ClassificationTypeDefinition SimileCommentType;
 
+		[Export(typeof(ClassificationTypeDefinition))]
+		[Name(SimileTagErrorClassifier)]
+		private static ClassificationTypeDefinition SimileTagErrorType;
+
+		[Export(typeof(ClassificationTypeDefinition))]
+		[Name(SimileLineErrorClassifier)]
+		private static ClassificationTypeDefinition SimileLineErrorType;
+		
 		[Export(typeof(ClassificationTypeDefinition))]
 		[Name(SimileInputTagClassifier)]
 		private static ClassificationTypeDefinition SimileInputTagType;
@@ -43,31 +68,6 @@ namespace ConsoleCompare
 		private static ClassificationTypeDefinition SimileNumericTagType;
 #pragma warning restore 169
 
-		/// <summary>
-		/// Defines an editor format for errors in a simile
-		/// </summary>
-		[Export(typeof(EditorFormatDefinition))]
-		[ClassificationType(ClassificationTypeNames = SimileErrorClassifier)]
-		[Name(SimileErrorClassifier)]
-		[UserVisible(true)]
-		[Order(Before = Priority.Default)]
-		internal sealed class SimileErrorFormatDefinition : ClassificationFormatDefinition
-		{
-			public SimileErrorFormatDefinition()
-			{
-				this.DisplayName = "Simile Error";
-				this.BackgroundColor = ErrorBackgroundColor;
-
-				// Red dashed underline example
-				//TextDecoration redUnderline = new TextDecoration();
-				//redUnderline.Pen = new Pen(Brushes.Red, 1);
-				//redUnderline.Pen.DashStyle = DashStyles.Dash;
-				//redUnderline.PenThicknessUnit = TextDecorationUnit.FontRecommended;
-				//this.TextDecorations = new TextDecorationCollection();
-				//this.TextDecorations.Add(redUnderline);
-			}
-		}
-
 
 		/// <summary>
 		/// Defines an editor format for comments in a simile
@@ -76,13 +76,51 @@ namespace ConsoleCompare
 		[ClassificationType(ClassificationTypeNames = SimileCommentClassifier)]
 		[Name(SimileCommentClassifier)]
 		[UserVisible(true)]
-		[Order(Before = Priority.Default)] 
+		[Order(Before = Priority.Default)]
 		internal sealed class SimileCommentFormatDefinition : ClassificationFormatDefinition
 		{
 			public SimileCommentFormatDefinition()
 			{
 				this.DisplayName = "Simile Comment";
 				this.ForegroundColor = CommentForegroundColor;
+			}
+		}
+
+
+		/// <summary>
+		/// Defines an editor format for errors on an entire simile line
+		/// </summary>
+		[Export(typeof(EditorFormatDefinition))]
+		[ClassificationType(ClassificationTypeNames = SimileLineErrorClassifier)]
+		[Name(SimileLineErrorClassifier)]
+		[UserVisible(true)]
+		[Order(Before = Priority.Default)]
+		internal sealed class SimileLineErrorFormatDefinition : ClassificationFormatDefinition
+		{
+			public SimileLineErrorFormatDefinition()
+			{
+				this.DisplayName = "Simile Line Error";
+
+				// Set up the decoration for a fancy underline effect
+				this.TextDecorations = new TextDecorationCollection() { ErrorLineDecoration };
+			}
+		}
+
+
+		/// <summary>
+		/// Defines an editor format for errors in a tag
+		/// </summary>
+		[Export(typeof(EditorFormatDefinition))]
+		[ClassificationType(ClassificationTypeNames = SimileTagErrorClassifier)]
+		[Name(SimileTagErrorClassifier)]
+		[UserVisible(true)]
+		[Order(Before = Priority.Default)]
+		internal sealed class SimileTagErrorFormatDefinition : ClassificationFormatDefinition
+		{
+			public SimileTagErrorFormatDefinition()
+			{
+				this.DisplayName = "Simile Tag Error";
+				this.BackgroundColor = ErrorTagBackgroundColor;
 			}
 		}
 
@@ -103,6 +141,7 @@ namespace ConsoleCompare
 				this.BackgroundColor = NumericTagBackgroundColor;
 			}
 		}
+
 
 		/// <summary>
 		/// Defines an editor format for input tags in a simile
