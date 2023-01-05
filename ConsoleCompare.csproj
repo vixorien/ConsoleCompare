@@ -75,7 +75,7 @@
     <Compile Include="SimileParser.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ItemTemplates\SimileFile.zip">
+    <Content Include="ItemTemplates\Console Compare\SimileFile.zip">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
