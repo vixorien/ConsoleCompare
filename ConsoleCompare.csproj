@@ -75,6 +75,11 @@
     <Compile Include="SimileParser.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ItemTemplates\SimileFile.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <None Include="Resources\IconCredits.txt" />
     <None Include="Key.snk" />
     <None Include="SimileExample.simile" />
     <None Include="source.extension.vsixmanifest">
@@ -111,7 +116,10 @@
   <ItemGroup>
     <Content Include="Resources\Command.png" />
     <Content Include="Resources\CommandPackage.ico" />
-    <Content Include="Resources\ResultsWindowCommand.png" />
+    <Content Include="Resources\compare.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />

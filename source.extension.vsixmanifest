@@ -4,6 +4,8 @@
         <Identity Id="ConsoleCompare.dc002d59-179f-45c4-b757-24003cbf7367" Version="1.0" Language="en-US" Publisher="Chris Cascioli" />
         <DisplayName>ConsoleCompare</DisplayName>
         <Description xml:space="preserve">VS Extension for capturing and comparing console output with an expected result</Description>
+        <Icon>Resources\compare.png</Icon>
+        <PreviewImage>Resources\compare.png</PreviewImage>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
@@ -19,6 +21,7 @@
     </Prerequisites>
     <Assets>
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-      <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
-  </Assets>
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
+        <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="File" Path="ItemTemplates" d:TargetPath="ItemTemplates\SimileFile.zip" />
+    </Assets>
 </PackageManifest>

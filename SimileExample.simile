@@ -3,23 +3,19 @@
 # - All other lines represent a mix of expected
 #   console input and/or output, including blank lines
 #
-# Input Tags
-# - Console input is defined inside input tags: {{ }}
-# - Input tags must be at the end of a line
-# - Input tags cannot appear on the same line as numeric tags
-# - Example of mixed output and input:
-#   What is your name? {{Jimmy}}
-#
-# Numeric Tags
-# - Use [[ ]]'s to define parsable numeric output with one or more options
-# - Numeric tag options:
-#   - type or t (required): denotes the type of data
-#   - min (optional): defines a minimum value for the data
-#   - max (optional): defines a maximum value for the data
-#   - values or v (optional): defines a set of one or more possible values
-#   - precision or p (optional): defines a decimal precision for rounding
+# Parsing Numeric Data
+# - Use [[ ]]'s to define parsable numeric data within a line of output
+# - Options include data type (required), min value, max value, 
+#   sets of expected values and precision rounding
 # - Examples:
-#   - [[type=int;values={5,10,15}]] or [[t=int;min=0;max=100]] or [[t=double;p=3]]
+#   - [[type=int;values={5,10,15}]] or [[t=short;min=0;max=100]] or [[t=double;p=3]]
+#
+# Application Input
+# - Provide input to the application with {{ }}'s
+# - Input tags must be at the end of a line or alone on a line
+# - Input tags cannot appear on the same line as numeric tags
+# - Example of expected output followed by input:
+#   - What is your name? {{Jimmy}}
 #
 # Actual simile begins on the next line:
-Hello, world!
+Hello, World!
