@@ -97,9 +97,9 @@ namespace ConsoleCompare
 			string exePath = FindPathToExecutable();
 			if (!File.Exists(exePath))
 			{
-				MessageBox(
-					"Cannot run output capture; compiled executable not found: " + exePath,
-					"Error");
+				window.SetStatus(
+					"Cannot run output comparison; compiled executable not found: " + exePath,
+					KnownMonikers.StatusError);
 				window.CaptureButtonEnabled = true;
 				window.StopButtonEnabled = false;
 				window.OpenButtonEnabled = true;
@@ -367,22 +367,6 @@ namespace ConsoleCompare
 		}
 
 		/// <summary>
-		/// Helper for showing a message box to the user
-		/// </summary>
-		/// <param name="message">The message displayed in the box</param>
-		/// <param name="title">The title of the box</param>
-		private void MessageBox(string message, string title = "Message")
-		{
-			VsShellUtilities.ShowMessageBox(
-				Command.Instance.ServiceProviderPackage as AsyncPackage,
-				message,
-				title,
-				OLEMSGICON.OLEMSGICON_INFO,
-				OLEMSGBUTTON.OLEMSGBUTTON_OK,
-				OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-		}
-
-		/// <summary>
 		/// Verifies that we have everything we need (a solution and
 		/// a console project) to proceed.
 		/// </summary>
@@ -394,14 +378,14 @@ namespace ConsoleCompare
 			// Is there a solution?
 			if (dte.Solution == null)
 			{
-				MessageBox("No solution loaded; please load a solution with a console application.", "Error");
+				window.SetStatus("No solution loaded; please load a solution with a console application.", KnownMonikers.StatusError);
 				return false;
 			}
 
 			// Is there a project?
 			if (dte.Solution.Projects.Count == 0)
 			{
-				MessageBox("No projects loaded; please load a console application project.", "Error");
+				window.SetStatus("No projects loaded; please load a console application project.", KnownMonikers.StatusError);
 				return false;
 			}
 
@@ -411,9 +395,9 @@ namespace ConsoleCompare
 			prjOutputType projectType = (prjOutputType)outputType.Value;
 			if (projectType != prjOutputType.prjOutputTypeExe)
 			{
-				MessageBox(
+				window.SetStatus(
 					"First project in solution is not a standard console application; please load a console application project.",
-					"Error");
+					KnownMonikers.StatusError);
 				return false;
 			}
 
