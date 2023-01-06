@@ -49,7 +49,7 @@ A custom file format, a *Console Simile* (stored in a .simile file), defines the
 - `type` or `t` (required)
   - Supported data types: `byte, sbyte, short, ushort, int, uint, long, ulong, float, double, char`
   - Short names: `b, sb, s, us, i, ui, l, ul, f, d, c`
-  - Examples: `[[t=s]]` or `[[type=s]]` or `[[t=short]]` would be parsed as a short
+  - Examples: `[[t=s]]` or `[[type=s]]` or `[[t=short]]` or `[[type=short]]` would be parsed as a short
      
 - `min` & `max` (optional)
   - Inclusive minimum and/or inclusive maximum for parsed numeric value
@@ -59,7 +59,7 @@ A custom file format, a *Console Simile* (stored in a .simile file), defines the
 - `values` or `v` (optional)
   - A set of one or more expected values
   - Values will be parsed in accordance with the type option
-  - Examples: `[[t=int;v={1,2,3,4}]]` or `[[t=int;values=5,10,15,20}]]` or `[[t=short;v={88}]]`
+  - Examples: `[[t=int;v={1,2,3,4}]]` or `[[t=int;values={5,10,15,20}]]` or `[[t=short;v={88}]]`
 
 - `precision` or `p` (optional)
   - Rounds the results to the given precision for checking
