@@ -317,6 +317,8 @@ namespace ConsoleCompare
 		/// </summary>
 		public void ShowCommentDetailsPopup()
 		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
 			string details = windowControl.TextComments.Tag as string;
 			if (string.IsNullOrEmpty(details))
 				return;
