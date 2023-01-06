@@ -164,25 +164,18 @@ namespace ConsoleCompare
 				catch (SimileParseException e)
 				{
 					// Create a detailed error message including the line that failed
-					string errorMessage = 
-						$"Parse of '{filename}' failed\n\n" +
-						e.Message + "\n\n" +
-						$"Line in question:\n'{e.LineText}'";
+					//string errorMessage = 
+					//	$"Parse of '{filename}' failed\n\n" +
+					//	e.Message + "\n\n" +
+					//	$"Line in question:\n'{e.LineText}'";
 
-					MessageBox.Show(
-						errorMessage,
-						"Error Parsing File",
-						MessageBoxButton.OK,
-						MessageBoxImage.Error);
+					// Not currently showing the entire message due to length
+					SetStatus($"Error parsing file on line {e.LineNumber}: {e.Message}", KnownMonikers.StatusError);
 				}
 				catch (Exception e)
 				{
 					// Other misc error with the file
-					MessageBox.Show(
-						$"Error opening file '{filename}': {e.Message}",
-						"Error Opening File",
-						MessageBoxButton.OK,
-						MessageBoxImage.Error);
+					SetStatus($"Error opening file '{filename}': {e.Message}", KnownMonikers.StatusError);
 				}
 
 				// Update window based on results
@@ -328,11 +321,7 @@ namespace ConsoleCompare
 			if (string.IsNullOrEmpty(details))
 				return;
 
-			MessageBox.Show(
-				details,
-				"Comment Details",
-				MessageBoxButton.OK,
-				MessageBoxImage.Information);
+			CommentDetailsWindow.OpenWindow(details);
 		}
 
 		/// <summary>

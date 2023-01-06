@@ -100,7 +100,7 @@ namespace ConsoleCompare
 		/// <summary>
 		/// Custom get property for grabbing the service provider package
 		/// </summary>
-		public Microsoft.VisualStudio.Shell.IAsyncServiceProvider ServiceProviderPackage { get => package; }
+		public Microsoft.VisualStudio.Shell.AsyncPackage ServiceProviderPackage { get => package; }
 
 	}
 }

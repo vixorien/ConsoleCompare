@@ -29,6 +29,7 @@ namespace ConsoleCompare
 	[Guid(CommandPackage.PackageGuidString)]
 	[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
 	[ProvideToolWindow(typeof(ResultsWindow))]
+	[ProvideToolWindow(typeof(CommentDetailsWindow))]
 	public sealed class CommandPackage : AsyncPackage
 	{
 		/// <summary>
