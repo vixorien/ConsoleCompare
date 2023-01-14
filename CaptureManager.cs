@@ -120,6 +120,7 @@ namespace ConsoleCompare
 			proc.StartInfo.RedirectStandardError = true;
 			proc.StartInfo.RedirectStandardOutput = true;
 			proc.StartInfo.RedirectStandardInput = true;
+			proc.StartInfo.WorkingDirectory = Path.GetDirectoryName(exePath);
 
 			// Handle IO in a synchronous manner, but on another thread
 			// This function will start the process
