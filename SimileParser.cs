@@ -40,6 +40,7 @@ namespace ConsoleCompare
    - Several options exist for data validation (see below).
    - Multiple options can be combined in a single [[ ]] with semicolons.
    - Multiple numeric tags may appear on the same line.
+   - Numeric tags appearing before the end of a line must be followed by a space.
    - Numeric tags CANNOT appear on a line with an input tag, 
       as text before an input tag must have a finite length.
    
@@ -372,6 +373,25 @@ namespace ConsoleCompare
 			// Grab the tag and the remainder		
 			string tag = line.Substring(startIndex + NumericTagStart.Length, endIndex - startIndex - NumericTagStart.Length);
 			string remainder = line.Substring(endIndex + NumericTagEnd.Length);
+
+			// Verify that the character after the tag is indeed a space (see below for reasoning)
+			if (remainder.Length > 0 && remainder[0] != ' ')
+				return false;
+
+			// Note: The above requirement is to simplify comparisons, but might
+			//       be relaxed in the future after more testing and feedback!
+			//       The main worry is: What happens if a numeric tag is followed
+			//       by a number or other numeric-friendly character?
+			//
+			//       Example: [[t=int]]0011[[t=int]] 
+			//
+			//       In the above example, comparisons will probably never work
+			//       as expected, because the "0011" will be parsed as part of the
+			//       data that the numeric tag represents.  Seems problematic!
+			//
+			//       Or, do we say "that's on the creator of the simile"?  Or have
+			//       a list of "valid" / "invalid" post-tag characters?  No idea yet.
+
 
 			// Parse the tag
 			string errorDetails;

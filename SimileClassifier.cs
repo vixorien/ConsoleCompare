@@ -130,6 +130,28 @@ namespace ConsoleCompare
 								ColumnNumber = i
 							});
 						}
+
+						// While we're here, check for invalid post-numeric-tag character
+						int postTagCharIndex = i + SimileParser.NumericTagEnd.Length; // Take into account end tag length!
+						if (postTagCharIndex < text.Length && text[postTagCharIndex] != ' ')
+						{
+							// There are more characters, and the next one isn't a space!
+
+							// Highlight the very next character as an error
+							results.Add(CreateTagSpan(
+								span,
+								postTagCharIndex,
+								1,
+								simileTagErrorType));
+
+							errorSnapshot.AddError(new SimileError()
+							{
+								Text = "Numeric tags appearing before the end of a line must be followed by a space",
+								DocumentName = filename,
+								LineNumber = lineNumber,
+								ColumnNumber = postTagCharIndex
+							});
+						}
 					}
 				}
 				else if (ContainsAtIndex(text, SimileParser.InputTagStart, i))
