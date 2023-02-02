@@ -42,6 +42,7 @@ A custom file format, a *Console Simile* (stored in a .simile file), defines the
 - Several options exist for data validation (see below).
 - Multiple options can appear in a single `[[ ]]`, separated by semicolons.
 - Multiple numeric tags may appear on the same line.
+- Numeric tags appearing before the end of a line must be followed by a space.
 - Numeric tags CANNOT appear on a line with an input tag, 
       as text before an input tag must have a finite length.
    
